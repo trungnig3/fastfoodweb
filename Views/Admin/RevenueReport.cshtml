@@ -1,0 +1,52 @@
+﻿@{
+    Layout = "_LayoutAdmin";
+}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>📊 Báo Cáo Tổng Hợp Doanh Thu</h2>
+        <button class="btn btn-primary" onclick="window.print()">🖨️ In Báo Cáo</button>
+    </div>
+
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4"><input type="date" name="startDate" class="form-control" value="@ViewBag.StartDate" /></div>
+        <div class="col-md-4"><input type="date" name="endDate" class="form-control" value="@ViewBag.EndDate" /></div>
+        <div class="col-md-4"><button type="submit" class="btn btn-success w-100">Lọc Báo Cáo</button></div>
+    </form>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card bg-primary text-white p-3">
+                <h5>Tổng doanh thu</h5>
+                <h3>@(((decimal)(ViewBag.TotalRevenue ?? 0)).ToString("N0")) đ</h3>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-success text-white p-3">
+                <h5>Tổng đơn hàng hoàn tất</h5>
+                <h3>@ViewBag.TotalOrders đơn</h3>
+            </div>
+        </div>
+    </div>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Mã HĐ</th>
+                <th>Thời gian</th>
+                <th>Phương thức</th>
+                <th>Tổng tiền</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in Model)
+            {
+                <tr>
+                    <td>@o.OrderCode</td>
+                    <td>@o.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@o.PaymentMethod</td>
+                    <td class="fw-bold text-danger">@o.TotalAmount.ToString("N0") đ</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

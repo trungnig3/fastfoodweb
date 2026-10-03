@@ -1,0 +1,203 @@
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng Nhập - FastFood Premium</title>
+    
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- Font cao cấp & Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            --radius-lg: 24px;
+            --radius-md: 16px;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            /* Hình nền Gradient và Pattern mờ */
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Hiệu ứng bong bóng trang trí nền */
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            backdrop-filter: blur(5px);
+            animation: float 8s infinite ease-in-out;
+        }
+        .bubble:nth-child(1) { width: 120px; height: 120px; top: 10%; left: 15%; animation-duration: 7s; }
+        .bubble:nth-child(2) { width: 200px; height: 200px; bottom: -50px; right: 10%; animation-duration: 10s; }
+        .bubble:nth-child(3) { width: 80px; height: 80px; top: 40%; right: 25%; animation-duration: 6s; }
+        
+        @@keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        /* Khối Đăng Nhập Kính Mờ (Glassmorphism) */
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px;
+            position: relative;
+            z-index: 10;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @@keyframes slideUpFade {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        .login-logo i {
+            font-size: 3.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+        .login-title {
+            font-weight: 800;
+            color: #2D3436;
+            letter-spacing: -1px;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+        }
+        .login-subtitle {
+            color: #636E72;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* Form Input cao cấp */
+        .form-floating > .form-control {
+            border-radius: var(--radius-md);
+            border: 2px solid #F1F2F6;
+            background-color: #FAFBFC;
+            font-weight: 600;
+            color: #2D3436;
+            height: 60px;
+            padding: 1rem 1.25rem;
+            transition: all 0.3s ease;
+        }
+        .form-floating > .form-control:focus {
+            border-color: #FF6B6B;
+            background-color: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.1);
+        }
+        .form-floating > label {
+            padding: 1rem 1.25rem;
+            color: #A4B0BE;
+            font-weight: 600;
+        }
+
+        /* Nút Submit */
+        .btn-login {
+            background: #2D3436; /* Màu đen sang trọng */
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            height: 60px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            transition: all 0.3s;
+            box-shadow: 0 10px 20px rgba(45, 52, 54, 0.2);
+        }
+        .btn-login:hover {
+            background: #1e2527;
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(45, 52, 54, 0.3);
+        }
+
+        .alert-error {
+            background-color: #FFF0F0;
+            border-left: 4px solid #FF4757;
+            color: #FF4757;
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 12px 15px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Các khối trang trí nền -->
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+    <div class="bubble"></div>
+
+    <!-- Khối Đăng Nhập -->
+    <div class="login-card">
+        <div class="login-logo">
+            <i class="fas fa-hamburger"></i>
+            <h1 class="login-title">FastFood POS</h1>
+            <p class="login-subtitle">Chào mừng bạn quay trở lại ca làm việc</p>
+        </div>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-error mb-4">
+                <i class="fas fa-exclamation-circle me-2"></i> @ViewBag.Error
+            </div>
+        }
+
+        <form method="post" action="/Account/Login" id="loginForm">
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="Username" name="username" placeholder="Tài khoản" required autocomplete="off">
+                <label for="Username"><i class="far fa-user me-2"></i>Tên đăng nhập</label>
+            </div>
+            
+            <div class="form-floating mb-4">
+                <input type="password" class="form-control" id="Password" name="password" placeholder="Mật khẩu" required autocomplete="off">
+                <label for="Password"><i class="fas fa-shield-alt me-2"></i>Mật khẩu</label>
+            </div>
+
+            <button type="submit" class="btn btn-login w-100" id="btnSubmit">
+                <span>ĐĂNG NHẬP NGAY</span> <i class="fas fa-arrow-right ms-2"></i>
+            </button>
+        </form>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Hiệu ứng Loading nhẹ cho nút bấm
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            var btn = document.getElementById('btnSubmit');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> ĐANG KIỂM TRA...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+        });
+    </script>
+</body>
+</html>

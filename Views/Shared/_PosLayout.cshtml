@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Điểm bán hàng</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        /* Tối ưu hóa cho POS không bị cuộn trang toàn cục nếu không cần */
+        body { background-color: #f4f6f9; }
+    </style>
+</head>
+<body>
+    <!-- Top Navbar gọn gàng -->
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="card border-0 shadow-sm mb-3 bg-gradient text-white" style="background: linear-gradient(135deg, #0d6efd, #0dcaf0);">
+    <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+        <div>
+            <!-- Tự động tính ca làm việc theo giờ hệ thống -->
+            <span class="fw-semibold">⚡ Ca làm việc: @(DateTime.Now.Hour < 12 ? "Sáng" : (DateTime.Now.Hour < 18 ? "Chiều" : "Tối"))</span> 
+            <span class="mx-2">|</span> 
+            <!-- Hiển thị tên thật từ Database -->
+            <span>Thu ngân: <strong>@ViewBag.CashierName</strong></span>
+        </div>
+        
+        <!-- Nút Đóng ca gọi đến hàm Logout -->
+        <!-- Nút Đóng ca giờ sẽ gọi Popup Đếm tiền -->
+<button type="button" class="btn btn-light btn-sm text-danger fw-bold px-3 rounded-pill shadow-sm" data-bs-toggle="modal" data-bs-target="#endShiftModal">Đóng ca</button>
+    </div>
+</div>
+    </nav>
+
+    <!-- Khu vực render View con (Sẽ chia lưới Sản phẩm và Hóa đơn bên trong View) -->
+    <div class="container-fluid mt-2">
+        @RenderBody()
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

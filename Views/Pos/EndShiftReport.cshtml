@@ -1,0 +1,65 @@
+﻿@{
+    ViewData["Title"] = "Báo Cáo Đối Soát Ca";
+    Layout = null; // Ẩn menu để in bill cho đẹp
+}
+
+<div style="max-width: 400px; margin: 20px auto; font-family: monospace; border: 1px dashed #000; padding: 20px;">
+    <h3 style="text-align: center; margin-bottom: 5px;">FASTFOOD ĐỐI SOÁT CA</h3>
+    <p style="text-align: center; font-size: 14px; margin-top: 0;">
+        Thu ngân: <strong>@User.Identity.Name</strong> <br />
+        Bắt đầu: @ViewBag.StartTime.ToString("HH:mm dd/MM") <br />
+        Kết thúc: @ViewBag.EndTime.ToString("HH:mm dd/MM")
+    </p>
+    <hr style="border-top: 1px dashed #000;" />
+    
+    <h4>💰 DÒNG TIỀN (LÝ THUYẾT)</h4>
+    <p>Tiền lẻ đầu ca: <span style="float: right;">@ViewBag.StartingCash.ToString("N0") đ</span></p>
+    <p>Thu Tiền mặt: <span style="float: right;">+ @ViewBag.CashRevenue.ToString("N0") đ</span></p>
+    <p>Thu VNPAY: <span style="float: right;">+ @ViewBag.TransferRevenue.ToString("N0") đ</span></p>
+    <h4 style="border-top: 1px solid #000; padding-top: 5px; margin-bottom: 5px;">
+        LÝ THUYẾT TRONG KÉT: <span style="float: right;">@ViewBag.ExpectedCashInDrawer.ToString("N0") đ</span>
+    </h4>
+
+    <hr style="border-top: 1px dashed #000;" />
+    
+    <h4 style="color: blue; margin-bottom: 5px;">
+        💵 KẾT QUẢ ĐẾM THỰC TẾ: <span style="float: right;">@ViewBag.ActualCash.ToString("N0") đ</span>
+    </h4>
+    
+    @{
+        // Tính toán thừa thiếu và gán màu sắc hiển thị
+        decimal diff = ViewBag.CashDifference != null ? ViewBag.CashDifference : 0;
+        string diffText = diff > 0 ? $"THỪA {diff.ToString("N0")} đ" : (diff < 0 ? $"THIẾU {Math.Abs(diff).ToString("N0")} đ" : "KHỚP 100%");
+        string diffColor = diff > 0 ? "green" : (diff < 0 ? "red" : "black");
+    }
+    
+    <h3 style="color: @diffColor; text-align: center; border: 2px solid @diffColor; padding: 5px; margin-top: 10px;">
+        @diffText
+    </h3>
+
+    <hr style="border-top: 1px dashed #000;" />
+    
+    <h4>🍔 SẢN PHẨM ĐÃ BÁN</h4>
+    <ul style="list-style: none; padding: 0;">
+        @if (ViewBag.ItemsSold != null)
+        {
+            foreach (var item in ViewBag.ItemsSold)
+            {
+                <li style="margin-bottom: 5px;">- @item.ProductName <span style="float: right;">x @item.Quantity</span></li>
+            }
+        }
+    </ul>
+
+    <hr style="border-top: 1px dashed #000;" />
+    
+    <div style="text-align: center; margin-top: 20px;" class="no-print">
+        <button onclick="window.print()" style="padding: 10px 20px; font-weight: bold; cursor: pointer;">🖨️ In Báo Cáo Đối Soát</button>
+        <!-- Nút này sẽ gọi hàm Logout để hoàn tất thoát ca -->
+        <a href="/Account/Logout" style="display: block; margin-top: 10px; color: red; text-decoration: none; font-weight: bold;">Xác nhận & Đăng xuất</a>
+    </div>
+</div>
+
+<style>
+    /* Ẩn nút bấm khi in ra giấy */
+    @@media print { .no-print { display: none !important; } }
+</style>

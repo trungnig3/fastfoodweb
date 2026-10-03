@@ -1,0 +1,73 @@
+@model IEnumerable<FastFoodWeb.Models.Product>
+@{
+    ViewData["Title"] = "Quản lý Tồn kho";
+    
+}
+
+<div class="container-fluid py-4">
+    <h2 class="mb-4">📦 Quản Lý Kho Hàng (Sản Phẩm & Combo)</h2>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0 text-center align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Mã SP</th>
+                        <th>Tên Món / Combo</th>
+                        <th>Danh Mục</th>
+                        <th>Tồn Kho Hiện Tại</th>
+                        <th>Cập Nhật Kho</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.ProductId</td>
+                            <td class="fw-bold text-primary">@item.ProductName</td>
+                            <td>@(item.Category != null ? item.Category.CategoryName : "Khác")</td>
+                            <td>
+                                <!-- Tự động cảnh báo màu đỏ nếu tồn kho dưới 10 -->
+                                <span class="badge @(item.StockQuantity > 10 ? "bg-success" : "bg-danger") fs-6 shadow-sm">
+                                    @item.StockQuantity
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-center align-items-center">
+                                    <input type="number" id="stock_@item.ProductId" value="@item.StockQuantity" class="form-control form-control-sm text-center me-2" style="width: 80px;" min="0" />
+                                    <button class="btn btn-sm btn-warning fw-bold shadow-sm" onclick="updateStock(@item.ProductId)">Lưu</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Hàm gọi API cập nhật số lượng kho mà không cần load lại trang (AJAX)
+function updateStock(id) {
+    var newStock = document.getElementById('stock_' + id).value;
+    
+    fetch('/Admin/UpdateStock', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'id=' + id + '&stock=' + newStock
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert("✅ " + data.message);
+            // Tải lại trang để cập nhật màu sắc cảnh báo nếu cần
+            location.reload();
+        } else {
+            alert("❌ Lỗi: " + data.message);
+        }
+    })
+    .catch(error => alert("❌ Lỗi kết nối đến máy chủ!"));
+}
+</script>
