@@ -1,0 +1,210 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Quản Lý Khách Hàng</h4>
+        <p class="text-muted small mb-0">Danh sách khách hàng thành viên, điểm thưởng tích lũy và phân hạng thành viên</p>
+    </div>
+    <button type="button" class="btn-brand-primary" data-bs-toggle="modal" data-bs-target="#createCustomerModal">
+        <i class="fas fa-user-plus"></i> Thêm Khách Hàng Mới
+    </button>
+</div>
+
+<!-- KPI THỐNG KÊ KHÁCH HÀNG -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Tổng số khách hàng</span>
+            <div class="fs-4 fw-bold tabular-nums text-dark"><%= customers.length %> <span class="fs-6 fw-normal text-muted">thành viên</span></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Tổng điểm tích lũy</span>
+            <div class="fs-4 fw-bold tabular-nums text-primary">
+                <%= customers.reduce((acc, c) => acc + (c.TotalPoints || 0), 0) %> <span class="fs-6 fw-normal text-muted">điểm</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Hạng Bạc & Vàng</span>
+            <div class="fs-4 fw-bold tabular-nums text-warning">
+                <%= customers.filter(c => c.MembershipTier === 'Bạc' || c.MembershipTier === 'Vàng').length %> <span class="fs-6 fw-normal text-muted">khách VIP</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Quy đổi ưu đãi</span>
+            <div class="fs-6 fw-semibold text-success mt-1">
+                1 điểm = 1.000 đ giảm giá
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BẢNG KHÁCH HÀNG -->
+<div class="dash-table-wrap">
+    <div class="table-responsive">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">Mã</th>
+                    <th>Họ Và Tên</th>
+                    <th>Số Điện Thoại</th>
+                    <th class="text-center">Hạng Thành Viên</th>
+                    <th class="text-end">Điểm Tích Lũy</th>
+                    <th class="text-end" style="width: 140px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (customers && customers.length > 0) { %>
+                    <% customers.forEach(function(c) { %>
+                        <tr>
+                            <td class="tabular-nums font-monospace text-muted small">#<%= c.CustomerId %></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar-circle" style="width: 32px; height: 32px; font-size: 0.8rem; background: #E2E8F0; color: #0F172A;">
+                                        <%= (c.FullName || 'K').charAt(0).toUpperCase() %>
+                                    </div>
+                                    <span class="fw-semibold text-dark"><%= c.FullName %></span>
+                                </div>
+                            </td>
+                            <td>
+                                <code class="text-dark"><%= c.Phone %></code>
+                            </td>
+                            <td class="text-center">
+                                <% if (c.MembershipTier === 'Vàng') { %>
+                                    <span class="status-badge badge-warning"><i class="fas fa-crown"></i> Hạng Vàng</span>
+                                <% } else if (c.MembershipTier === 'Bạc') { %>
+                                    <span class="status-badge badge-info"><i class="fas fa-medal"></i> Hạng Bạc</span>
+                                <% } else { %>
+                                    <span class="status-badge badge-neutral"><i class="fas fa-shield"></i> Hạng Đồng</span>
+                                <% } %>
+                            </td>
+                            <td class="text-end tabular-nums fw-bold text-danger">
+                                <%= c.TotalPoints %> điểm
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;" onclick="openEditCustomerModal(<%= c.CustomerId %>, '<%= c.FullName.replace(/'/g, "\\'") %>', '<%= c.Phone %>', <%= c.TotalPoints %>, '<%= c.MembershipTier %>')">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;" onclick="deleteCustomer(<%= c.CustomerId %>, '<%= c.FullName.replace(/'/g, "\\'") %>')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Chưa có thông tin khách hàng nào.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MODAL THÊM KHÁCH HÀNG -->
+<div class="modal fade" id="createCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark"><i class="fas fa-user-plus text-primary me-2"></i>Thêm Khách Hàng Mới</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Admin/CreateCustomer" method="post">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted text-uppercase">Họ và tên khách hàng <span class="text-danger">*</span></label>
+                        <input type="text" name="FullName" class="form-control form-control-custom w-100" required placeholder="Ví dụ: Trần Thị Mai" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted text-uppercase">Số điện thoại <span class="text-danger">*</span></label>
+                        <input type="tel" name="Phone" class="form-control form-control-custom w-100" required placeholder="0912345678" />
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn-brand-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-brand-primary">Thêm Khách Hàng</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SỬA KHÁCH HÀNG -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark"><i class="fas fa-user-pen text-primary me-2"></i>Chỉnh Sửa Khách Hàng</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Admin/EditCustomer" method="post">
+                <input type="hidden" name="CustomerId" id="editCustomerId" />
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted text-uppercase">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" name="FullName" id="editCustomerName" class="form-control form-control-custom w-100" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted text-uppercase">Số điện thoại <span class="text-danger">*</span></label>
+                        <input type="tel" name="Phone" id="editCustomerPhone" class="form-control form-control-custom w-100" required />
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted text-uppercase">Điểm tích lũy</label>
+                            <input type="number" name="TotalPoints" id="editCustomerPoints" class="form-control form-control-custom w-100" min="0" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted text-uppercase">Hạng thành viên</label>
+                            <select name="MembershipTier" id="editCustomerTier" class="form-select form-select-custom w-100">
+                                <option value="Đồng">Đồng</option>
+                                <option value="Bạc">Bạc</option>
+                                <option value="Vàng">Vàng</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn-brand-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-brand-primary">Lưu Thay Đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEditCustomerModal(id, name, phone, points, tier) {
+    document.getElementById('editCustomerId').value = id;
+    document.getElementById('editCustomerName').value = name;
+    document.getElementById('editCustomerPhone').value = phone;
+    document.getElementById('editCustomerPoints').value = points;
+    document.getElementById('editCustomerTier').value = tier;
+    var modal = new bootstrap.Modal(document.getElementById('editCustomerModal'));
+    modal.show();
+}
+
+function deleteCustomer(id, name) {
+    showConfirmDialog('Xóa Khách Hàng', 'Bạn có chắc chắn muốn xóa khách hàng ' + name + ' khỏi hệ thống?', function() {
+        fetch('/Admin/DeleteCustomer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id=' + id
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                showToast('Đã xóa khách hàng thành công!', 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast('Không thể xóa khách hàng này: ' + (d.message || ''), 'error');
+            }
+        })
+        .catch(() => showToast('Lỗi kết nối máy chủ!', 'error'));
+    });
+}
+</script>

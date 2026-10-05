@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+cookies.txt
+*.cookie.txt
+fastfood-web-pos.tar.gz
+fastfood-web-pos.zip

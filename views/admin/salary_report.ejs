@@ -1,0 +1,89 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Bảng Lương Nhân Viên & Ca Làm</h4>
+        <p class="text-muted small mb-0">Hệ thống tự động tính lương theo giờ, phụ cấp tăng ca (x1.5) và khấu trừ thiếu két</p>
+    </div>
+    
+    <!-- BỘ LỌC THÁNG / NĂM -->
+    <form method="get" action="/Admin/SalaryReport" class="d-flex gap-2 align-items-center bg-white p-2 rounded-3 border">
+        <span class="small fw-semibold text-muted ps-1">Tháng:</span>
+        <input type="number" name="month" class="form-control form-control-custom text-center py-1 px-2" style="width: 70px; font-size: 0.85rem;" value="<%= selectedMonth %>" min="1" max="12">
+        <span class="small fw-semibold text-muted">Năm:</span>
+        <input type="number" name="year" class="form-control form-control-custom text-center py-1 px-2" style="width: 85px; font-size: 0.85rem;" value="<%= selectedYear %>" min="2020" max="2100">
+        <button type="submit" class="btn-brand-primary py-1 px-3" style="font-size: 0.85rem;">
+            <i class="fas fa-filter me-1"></i> Xem bảng lương
+        </button>
+    </form>
+</div>
+
+<div class="dash-table-wrap mb-4">
+    <div class="table-responsive">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th class="ps-3">Nhân Viên</th>
+                    <th class="text-center">Giờ Chuẩn (&le; 8h)</th>
+                    <th class="text-center">Tăng Ca (OT)</th>
+                    <th class="text-end">Thưởng Tăng Ca (x1.5)</th>
+                    <th class="text-end pe-3">Tổng Thực Lãnh</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (report && report.length > 0) { %>
+                    <% let grandTotal = 0; %>
+                    <% report.forEach(function(item) { %>
+                        <% grandTotal += Number(item.TotalSalary); %>
+                        <tr>
+                            <td class="ps-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar" style="width: 34px; height: 34px; font-size: 0.85rem;">
+                                        <%= (item.Username || 'U').charAt(0).toUpperCase() %>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-dark"><%= item.FullName || item.Username %></div>
+                                        <small class="text-muted tabular-nums">Lương CB: <%= Number(item.HourlyRate).toLocaleString('vi-VN') %> đ/h</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="text-center tabular-nums">
+                                <span class="status-badge badge-neutral">
+                                    <i class="far fa-clock"></i> <%= Number(item.StandardHours).toFixed(1) %> giờ
+                                </span>
+                            </td>
+                            <td class="text-center tabular-nums">
+                                <% if (item.OvertimeHours > 0) { %>
+                                    <span class="status-badge badge-warning">
+                                        <i class="fas fa-stopwatch"></i> +<%= Number(item.OvertimeHours).toFixed(1) %> giờ
+                                    </span>
+                                <% } else { %>
+                                    <span class="text-muted small">0.0 giờ</span>
+                                <% } %>
+                            </td>
+                            <td class="text-end tabular-nums fw-semibold text-success">
+                                +<%= Number(item.OvertimeBonus).toLocaleString('vi-VN') %> đ
+                            </td>
+                            <td class="text-end pe-3 tabular-nums fw-bold text-dark fs-6">
+                                <%= Number(item.TotalSalary).toLocaleString('vi-VN') %> đ
+                            </td>
+                        </tr>
+                    <% }); %>
+                    
+                    <!-- DÒNG TỔNG QUỸ LƯƠNG -->
+                    <tr style="background-color: #F8FAFC;">
+                        <td colspan="4" class="text-end fw-bold text-muted py-3">TỔNG QUỸ LƯƠNG THÁNG <%= selectedMonth %>/<%= selectedYear %>:</td>
+                        <td class="text-end pe-3 fw-bold text-danger fs-5 py-3 tabular-nums">
+                            <%= grandTotal.toLocaleString('vi-VN') %> đ
+                        </td>
+                    </tr>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fas fa-calendar-xmark fa-2x mb-2 d-block opacity-25"></i>
+                            Chưa có dữ liệu ca làm việc hoàn tất trong Tháng <%= selectedMonth %>/<%= selectedYear %>.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

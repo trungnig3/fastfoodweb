@@ -1,0 +1,125 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Quản Lý Thực Đơn & Combo</h4>
+        <p class="text-muted small mb-0">Thiết lập danh sách món ăn, đơn giá và trạng thái phục vụ của cửa hàng</p>
+    </div>
+    <a href="/Admin/CreateProduct" class="btn-brand-primary">
+        <i class="fas fa-plus"></i> Thêm Món Ăn Mới
+    </a>
+</div>
+
+<!-- BỘ LỌC VÀ TÌM KIẾM -->
+<div class="dash-card mb-4 p-3">
+    <form method="get" action="/Admin/Products" class="row g-2 align-items-center">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                <input type="text" name="search" class="form-control form-control-custom border-start-0" placeholder="Tìm kiếm theo tên món..." value="<%= searchKey || '' %>" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <select name="categoryId" class="form-select form-select-custom">
+                <option value="">-- Tất cả danh mục --</option>
+                <% categories.forEach(function(c) { %>
+                    <option value="<%= c.CategoryId %>" <%= selectedCategory == c.CategoryId ? 'selected' : '' %>><%= c.CategoryName %></option>
+                <% }); %>
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button type="submit" class="btn-brand-primary flex-grow-1 justify-content-center">
+                <i class="fas fa-filter"></i> Lọc dữ liệu
+            </button>
+            <% if (searchKey || selectedCategory) { %>
+                <a href="/Admin/Products" class="btn-brand-secondary" title="Đặt lại bộ lọc">
+                    <i class="fas fa-rotate-left"></i>
+                </a>
+            <% } %>
+        </div>
+    </form>
+</div>
+
+<!-- BẢNG SẢN PHẨM -->
+<div class="dash-table-wrap">
+    <div class="table-responsive">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">Mã</th>
+                    <th style="width: 70px;">Ảnh</th>
+                    <th>Tên Món Ăn</th>
+                    <th>Danh Mục</th>
+                    <th class="text-end">Đơn Giá</th>
+                    <th class="text-center">Tồn Kho</th>
+                    <th>Phân Loại</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-end" style="width: 140px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (products && products.length > 0) { %>
+                    <% products.forEach(function(item) { %>
+                        <tr>
+                            <td class="tabular-nums text-muted font-monospace small">#<%= item.ProductId %></td>
+                            <td>
+                                <img src="<%= item.ImageURL || 'https://placehold.co/60x60?text=' + encodeURIComponent(item.ProductName) %>" 
+                                     class="rounded-2" 
+                                     style="width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--border-subtle);" 
+                                     alt="<%= item.ProductName %>" />
+                            </td>
+                            <td>
+                                <div class="fw-semibold text-dark"><%= item.ProductName %></div>
+                            </td>
+                            <td>
+                                <span class="small text-muted"><%= item.Category ? item.Category.CategoryName : 'Món khác' %></span>
+                            </td>
+                            <td class="text-end tabular-nums fw-bold text-dark">
+                                <%= Number(item.Price).toLocaleString('vi-VN') %> đ
+                            </td>
+                            <td class="text-center tabular-nums">
+                                <% if (item.StockQuantity <= 10) { %>
+                                    <span class="status-badge badge-danger"><i class="fas fa-triangle-exclamation"></i> <%= item.StockQuantity %></span>
+                                <% } else { %>
+                                    <span class="status-badge badge-neutral"><%= item.StockQuantity %></span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (item.IsCombo) { %>
+                                    <span class="status-badge badge-warning">Combo</span>
+                                <% } else { %>
+                                    <span class="status-badge badge-neutral">Món lẻ</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (item.IsActive) { %>
+                                    <span class="status-badge badge-success"><i class="fas fa-circle-check"></i> Đang bán</span>
+                                <% } else { %>
+                                    <span class="status-badge badge-neutral"><i class="fas fa-ban"></i> Ngừng bán</span>
+                                <% } %>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-1">
+                                    <a href="/Admin/EditProduct/<%= item.ProductId %>" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;" title="Chỉnh sửa món">
+                                        <i class="fas fa-pen-to-square"></i> Sửa
+                                    </a>
+                                    <form action="/Admin/DeleteProduct" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa món: <%= item.ProductName.replace(/'/g, '') %>?');">
+                                        <input type="hidden" name="id" value="<%= item.ProductId %>" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;" title="Xóa món">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="fas fa-utensils fa-2x mb-2 d-block opacity-25"></i>
+                            Không tìm thấy món ăn nào phù hợp với điều kiện tìm kiếm.
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

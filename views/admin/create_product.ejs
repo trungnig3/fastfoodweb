@@ -1,0 +1,91 @@
+<div class="mx-auto" style="max-width: 680px;">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <a href="/Admin/Products" class="btn-brand-secondary py-1 px-2" style="font-size: 0.8rem;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h4 class="fw-bold mb-0" style="color: var(--text-heading); letter-spacing: -0.02em;">Thêm Món Ăn Mới</h4>
+    </div>
+
+    <div class="dash-card p-4">
+        <form method="post" action="/Admin/CreateProduct">
+            <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted text-uppercase">Tên món ăn / Combo <span class="text-danger">*</span></label>
+                <input type="text" name="ProductName" class="form-control form-control-custom w-100" required placeholder="Ví dụ: Gà Rán Giòn Cay" />
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Giá bán (VND) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" name="Price" class="form-control form-control-custom" required min="0" step="1000" placeholder="45000" />
+                        <span class="input-group-text bg-light text-muted border-start-0">đ</span>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Số lượng tồn kho ban đầu <span class="text-danger">*</span></label>
+                    <input type="number" name="StockQuantity" class="form-control form-control-custom w-100" required min="0" value="50" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted text-uppercase">Danh mục phân loại <span class="text-danger">*</span></label>
+                <select name="CategoryId" class="form-select form-select-custom w-100" required>
+                    <% categories.forEach(function(c) { %>
+                        <option value="<%= c.CategoryId %>"><%= c.CategoryName %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-semibold text-muted text-uppercase">Đường dẫn hình ảnh (URL)</label>
+                <input type="url" name="ImageURL" id="imgInput" class="form-control form-control-custom w-100" placeholder="https://..." oninput="previewImage(this.value)" />
+                <div class="mt-2 text-center" id="imgPreviewWrapper" style="display: none;">
+                    <img id="imgPreview" src="" alt="Preview" style="max-height: 140px; border-radius: 8px; border: 1px solid var(--border-subtle); object-fit: cover;" />
+                </div>
+            </div>
+
+            <div class="p-3 mb-4 rounded-3" style="background: #F8FAFC; border: 1px solid var(--border-subtle);">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" name="IsCombo" value="true" id="isComboCheck">
+                            <label class="form-check-label fw-semibold text-dark small" for="isComboCheck">
+                                Đây là phần ăn Combo
+                            </label>
+                        </div>
+                        <small class="text-muted d-block ps-4">Gói kết hợp nhiều món với mức giá ưu đãi</small>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="isActiveCheck" checked>
+                            <label class="form-check-label fw-semibold text-dark small" for="isActiveCheck">
+                                Kích hoạt kinh doanh
+                            </label>
+                        </div>
+                        <small class="text-muted d-block ps-4">Cho phép hiển thị trên màn hình POS và trang đặt món</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                <a href="/Admin/Products" class="btn-brand-secondary">Hủy bỏ</a>
+                <button type="submit" class="btn-brand-primary">
+                    <i class="fas fa-check"></i> Lưu Món Ăn
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function previewImage(url) {
+    const wrap = document.getElementById('imgPreviewWrapper');
+    const img = document.getElementById('imgPreview');
+    if (url && url.startsWith('http')) {
+        img.src = url;
+        wrap.style.display = 'block';
+    } else {
+        wrap.style.display = 'none';
+    }
+}
+</script>

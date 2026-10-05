@@ -1,0 +1,87 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Tra Cứu Khách Hàng & Điểm Thưởng</h4>
+        <p class="text-muted small mb-0">Hỗ trợ thu ngân kiểm tra điểm tích lũy thành viên khi khách hàng thanh toán tại quầy</p>
+    </div>
+</div>
+
+<div class="dash-card mb-4 p-3">
+    <div class="row g-2 align-items-center">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                <input type="text" id="searchCustomerPhone" class="form-control form-control-custom border-start-0" placeholder="Nhập số điện thoại khách hàng cần tìm..." oninput="filterCustomerTable(this.value)" />
+            </div>
+        </div>
+        <div class="col-md-6 text-md-end text-muted small">
+            <i class="fas fa-gift text-danger me-1"></i> Tỷ lệ đổi thưởng: <strong>1 điểm = 1.000 đ giảm giá trực tiếp</strong>
+        </div>
+    </div>
+</div>
+
+<div class="dash-table-wrap">
+    <div class="table-responsive">
+        <table class="dash-table" id="customerCashierTable">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">Mã</th>
+                    <th>Họ Và Tên</th>
+                    <th>Số Điện Thoại</th>
+                    <th class="text-center">Hạng Thành Viên</th>
+                    <th class="text-end">Điểm Khả Dụng</th>
+                    <th class="text-end">Giá Trị Giảm Tối Đa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (customers && customers.length > 0) { %>
+                    <% customers.forEach(function(c) { %>
+                        <tr class="customer-data-row" data-phone="<%= c.Phone %>" data-name="<%= c.FullName.toLowerCase() %>">
+                            <td class="tabular-nums font-monospace text-muted small">#<%= c.CustomerId %></td>
+                            <td>
+                                <div class="fw-bold text-dark"><%= c.FullName %></div>
+                            </td>
+                            <td>
+                                <code class="text-dark fs-6"><%= c.Phone %></code>
+                            </td>
+                            <td class="text-center">
+                                <% if (c.MembershipTier === 'Vàng') { %>
+                                    <span class="status-badge badge-warning"><i class="fas fa-crown"></i> Vàng</span>
+                                <% } else if (c.MembershipTier === 'Bạc') { %>
+                                    <span class="status-badge badge-info"><i class="fas fa-medal"></i> Bạc</span>
+                                <% } else { %>
+                                    <span class="status-badge badge-neutral">Đồng</span>
+                                <% } %>
+                            </td>
+                            <td class="text-end tabular-nums fw-bold text-danger fs-6">
+                                <%= c.TotalPoints %> điểm
+                            </td>
+                            <td class="text-end tabular-nums fw-bold text-success">
+                                <%= Number(c.TotalPoints * 1000).toLocaleString('vi-VN') %> đ
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Chưa có thông tin khách hàng nào.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterCustomerTable(query) {
+    query = (query || '').trim().toLowerCase();
+    var rows = document.querySelectorAll('.customer-data-row');
+    rows.forEach(function(row) {
+        var phone = row.getAttribute('data-phone') || '';
+        var name = row.getAttribute('data-name') || '';
+        if (!query || phone.includes(query) || name.includes(query)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>

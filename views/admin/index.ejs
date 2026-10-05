@@ -1,0 +1,212 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Bảng Điều Khiển Tổng Quan</h4>
+        <p class="text-muted small mb-0">Thống kê hoạt động kinh doanh, đơn hàng và kho hàng theo thời gian thực</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/Admin/CreateProduct" class="btn-brand-primary">
+            <i class="fas fa-plus-circle"></i> Thêm Món Mới
+        </a>
+    </div>
+</div>
+
+<!-- 4 THẺ METRICS KPI -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-sm-6">
+        <div class="dash-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">Doanh thu hôm nay</span>
+                <span class="p-2 rounded-2 text-danger" style="background: #FFF1F2;">
+                    <i class="fas fa-chart-line"></i>
+                </span>
+            </div>
+            <div class="fs-4 fw-bold tabular-nums text-dark mb-1">
+                <%= Number(todayRevenue).toLocaleString('vi-VN') %> <span class="fs-6 fw-normal text-muted">đ</span>
+            </div>
+            <div class="small text-muted d-flex align-items-center gap-1">
+                <span class="text-success fw-semibold"><i class="fas fa-arrow-trend-up"></i> <%= todayOrdersCount %> đơn</span>
+                <span>hoàn tất trong ngày</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="dash-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">Tổng đơn trong ca</span>
+                <span class="p-2 rounded-2 text-primary" style="background: #EFF6FF;">
+                    <i class="fas fa-receipt"></i>
+                </span>
+            </div>
+            <div class="fs-4 fw-bold tabular-nums text-dark mb-1">
+                <%= todayOrdersCount %> <span class="fs-6 fw-normal text-muted">đơn</span>
+            </div>
+            <div class="small text-muted">
+                <span>Tại quầy POS & Khách đặt Online</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="dash-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">Thực đơn đang bán</span>
+                <span class="p-2 rounded-2 text-success" style="background: #ECFDF5;">
+                    <i class="fas fa-bowl-food"></i>
+                </span>
+            </div>
+            <div class="fs-4 fw-bold tabular-nums text-dark mb-1">
+                <%= activeProductsCount %> <span class="fs-6 fw-normal text-muted">món</span>
+            </div>
+            <div class="small text-muted">
+                <span><%= lowStockCount > 0 ? (lowStockCount + ' món cần nhập thêm') : 'Kho hàng ổn định' %></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-sm-6">
+        <div class="dash-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.04em;">Nhân sự hoạt động</span>
+                <span class="p-2 rounded-2 text-warning" style="background: #FFFBEB;">
+                    <i class="fas fa-users"></i>
+                </span>
+            </div>
+            <div class="fs-4 fw-bold tabular-nums text-dark mb-1">
+                <%= staffCount %> <span class="fs-6 fw-normal text-muted">nhân viên</span>
+            </div>
+            <div class="small text-muted">
+                <span>Thu ngân và quản lý ca trực</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BIỂU ĐỒ 7 NGÀY & TOP SẢN PHẨM -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="dash-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h6 class="fw-bold mb-0 text-dark">Biểu Đồ Doanh Thu 7 Ngày Gần Nhất</h6>
+                    <small class="text-muted">Doanh thu tích lũy từ các đơn hàng thành công</small>
+                </div>
+                <span class="status-badge badge-neutral"><i class="fas fa-calendar-week"></i> 7 ngày qua</span>
+            </div>
+
+            <!-- SVG BARS CHART -->
+            <% 
+                const maxRev = Math.max(...dailyTrend.map(d => d.revenue), 100000);
+            %>
+            <div class="pt-2 pb-1" style="height: 220px; display: flex; align-items: flex-end; gap: 16px;">
+                <% dailyTrend.forEach(function(day) { %>
+                    <% const heightPct = Math.max(12, Math.round((day.revenue / maxRev) * 100)); %>
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end;">
+                        <span class="tabular-nums small text-muted mb-1" style="font-size: 0.72rem;">
+                            <%= day.revenue > 0 ? (Math.round(day.revenue / 1000) + 'k') : '0' %>
+                        </span>
+                        <div style="width: 100%; max-width: 44px; height: <%= heightPct %>%; background: linear-gradient(180deg, #E11D48 0%, #FB7185 100%); border-radius: 6px 6px 2px 2px; transition: height 0.5s ease;" title="<%= day.label %>: <%= Number(day.revenue).toLocaleString('vi-VN') %> đ (<%= day.count %> đơn)"></div>
+                        <span class="small fw-semibold text-muted mt-2" style="font-size: 0.75rem;"><%= day.label %></span>
+                    </div>
+                <% }); %>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="dash-card h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0 text-dark">Món Ăn Bán Chạy Nhất</h6>
+                <a href="/Admin/Reports" class="small text-decoration-none text-muted fw-semibold">Chi tiết</a>
+            </div>
+
+            <div class="d-flex flex-column gap-3 mt-3">
+                <% if (topSelling && topSelling.length > 0) { %>
+                    <% const maxSold = Math.max(...topSelling.map(s => s.count), 1); %>
+                    <% topSelling.forEach(function(item, idx) { %>
+                        <% const barPct = Math.round((item.count / maxSold) * 100); %>
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-semibold text-dark text-truncate" style="max-width: 180px;"><%= item.product.ProductName %></span>
+                                <span class="tabular-nums fw-bold text-danger"><%= item.count %> phần</span>
+                            </div>
+                            <div style="height: 6px; background: #F1F5F9; border-radius: 100px; overflow: hidden;">
+                                <div style="width: <%= barPct %>%; height: 100%; background: #E11D48; border-radius: 100px;"></div>
+                            </div>
+                        </div>
+                    <% }); %>
+                <% } else { %>
+                    <p class="text-muted small py-4 text-center">Chưa có dữ liệu bán hàng</p>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ĐƠN HÀNG GẦN ĐÂY -->
+<div class="dash-card">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h6 class="fw-bold mb-0 text-dark">Hóa Đơn Bán Hàng Gần Đây</h6>
+            <small class="text-muted">Các đơn đặt gần nhất qua POS và khách hàng online</small>
+        </div>
+        <a href="/Admin/Orders" class="btn-brand-secondary py-1 px-3" style="font-size: 0.8rem;">
+            Xem tất cả hóa đơn <i class="fas fa-arrow-right ms-1"></i>
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Thời Gian</th>
+                    <th>Phương Thức</th>
+                    <th class="text-end">Tổng Tiền</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-end">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (recentOrders && recentOrders.length > 0) { %>
+                    <% recentOrders.forEach(function(o) { %>
+                        <tr>
+                            <td>
+                                <a href="/Admin/OrderDetails/<%= o.OrderId %>" class="fw-bold text-dark text-decoration-none">
+                                    <code><%= o.OrderCode %></code>
+                                </a>
+                            </td>
+                            <td class="text-muted small tabular-nums">
+                                <%= new Date(o.OrderDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %> · <%= new Date(o.OrderDate).toLocaleDateString('vi-VN') %>
+                            </td>
+                            <td>
+                                <span class="small text-muted"><%= o.PaymentMethod %></span>
+                            </td>
+                            <td class="text-end tabular-nums fw-bold text-dark">
+                                <%= Number(o.TotalAmount).toLocaleString('vi-VN') %> đ
+                            </td>
+                            <td>
+                                <% if (o.OrderStatus === 'Hoàn tất' || o.OrderStatus === 'Completed') { %>
+                                    <span class="status-badge badge-success"><i class="fas fa-check"></i> Hoàn tất</span>
+                                <% } else if (o.OrderStatus === 'Pending') { %>
+                                    <span class="status-badge badge-warning"><i class="fas fa-clock"></i> Chờ xử lý</span>
+                                <% } else { %>
+                                    <span class="status-badge badge-danger"><i class="fas fa-xmark"></i> Đã hủy</span>
+                                <% } %>
+                            </td>
+                            <td class="text-end">
+                                <a href="/Admin/OrderDetails/<%= o.OrderId %>" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;">
+                                    Chi tiết
+                                </a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Chưa có đơn hàng nào được ghi nhận.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

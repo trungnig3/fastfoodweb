@@ -1,0 +1,216 @@
+<div class="mx-auto" style="max-width: 820px;">
+    <div class="d-flex justify-content-between align-items-center mb-3 no-print">
+        <a href="/Admin/Orders" class="btn-brand-secondary py-1 px-3" style="font-size: 0.82rem;">
+            <i class="fas fa-arrow-left me-1"></i> Quay lại danh sách
+        </a>
+        <button class="btn-brand-primary" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> In Hóa Đơn
+        </button>
+    </div>
+
+    <!-- KHỐI ĐIỀU CHỈNH TRẠNG THÁI ĐƠN HÀNG (DÀNH CHO ADMIN/THU NGÂN) -->
+    <div class="dash-card p-3 mb-3 no-print border" style="background: #F8FAFC;">
+        <form method="POST" action="/Admin/UpdateOrderStatus" class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <input type="hidden" name="orderId" value="<%= order.OrderId %>" />
+            <div class="d-flex align-items-center gap-2">
+                <span class="p-2 rounded-2 bg-white text-danger border"><i class="fas fa-arrows-rotate"></i></span>
+                <div>
+                    <div class="fw-bold text-dark small">Cập Nhật Trạng Thái Giao Hàng & Đơn:</div>
+                    <small class="text-muted">Trạng thái hiện tại: <b class="text-primary"><%= order.ShippingStatus || order.OrderStatus %></b></small>
+                </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <select name="status" class="form-select form-select-custom py-1" style="width: 220px; font-size: 0.85rem; font-weight: 600;">
+                    <option value="Đang chuẩn bị món" <%= (order.ShippingStatus === 'Đang chuẩn bị món' || order.OrderStatus === 'Đang chuẩn bị món' || order.OrderStatus === 'Đang xử lý') ? 'selected' : '' %>>👨‍🍳 Đang chuẩn bị món</option>
+                    <option value="Đang giao hàng" <%= (order.ShippingStatus === 'Đang giao hàng' || order.OrderStatus === 'Đang giao hàng' || order.OrderStatus === 'Đang giao') ? 'selected' : '' %>>🛵 Đang giao hàng</option>
+                    <option value="Đã giao thành công" <%= (order.ShippingStatus === 'Đã giao thành công') ? 'selected' : '' %>>✅ Đã giao thành công</option>
+                    <option value="Hoàn tất" <%= order.OrderStatus === 'Hoàn tất' ? 'selected' : '' %>>⭐ Hoàn tất đơn</option>
+                    <option value="Đã hủy" <%= order.OrderStatus === 'Đã hủy' ? 'selected' : '' %>>❌ Đã hủy đơn</option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-dark px-3 py-2 fw-bold text-nowrap" style="border-radius: 8px;">
+                    Lưu Trạng Thái
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- TIẾN TRÌNH TRẠNG THÁI ĐƠN HÀNG (TIMELINE STEPPER) -->
+    <div class="dash-card p-3 p-md-4 mb-4 no-print border">
+        <div class="fw-bold text-dark small mb-3"><i class="fas fa-route text-danger me-1"></i> TIẾN TRÌNH XỬ LÝ & GIAO HÀNG</div>
+        <% 
+            const isCancelled = order.OrderStatus === 'Đã hủy';
+            const isCompleted = order.OrderStatus === 'Hoàn tất' || order.ShippingStatus === 'Đã giao thành công';
+            const isShipping = order.ShippingStatus === 'Đang giao hàng' || order.OrderStatus === 'Đang giao';
+            const isPreparing = order.ShippingStatus === 'Đang chuẩn bị món' || order.OrderStatus === 'Đang xử lý' || (!isCompleted && !isShipping && !isCancelled);
+            
+            let progressWidth = '15%';
+            if (isCancelled) progressWidth = '100%';
+            else if (isCompleted) progressWidth = '100%';
+            else if (isShipping) progressWidth = '70%';
+            else if (isPreparing) progressWidth = '40%';
+        %>
+        
+        <% if (isCancelled) { %>
+            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-0 d-flex align-items-center gap-2">
+                <i class="fas fa-ban fs-5"></i>
+                <div>
+                    <b>Đơn hàng đã bị hủy (<%= order.ShippingStatus || 'Đã hủy đơn' %>)</b>. Tồn kho các sản phẩm đã được tự động hoàn trả đầy đủ.
+                </div>
+            </div>
+        <% } else { %>
+            <div class="position-relative py-2">
+                <div class="progress position-absolute top-50 start-0 w-100" style="height: 4px; z-index: 0; transform: translateY(-50%); background: #E2E8F0;">
+                    <div class="progress-bar <%= isCompleted ? 'bg-success' : 'bg-danger' %>" style="width: <%= progressWidth %>; transition: width 0.3s ease;"></div>
+                </div>
+                <div class="d-flex justify-content-between position-relative" style="z-index: 1;">
+                    <!-- Bước 1: Tiếp nhận -->
+                    <div class="text-center" style="width: 25%;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 bg-danger text-white shadow-sm" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                            <i class="fas fa-file-invoice"></i>
+                        </div>
+                        <div class="small fw-bold text-dark">1. Tiếp nhận</div>
+                        <div class="text-muted" style="font-size: 0.72rem;">Đã tạo đơn</div>
+                    </div>
+                    <!-- Bước 2: Chuẩn bị món -->
+                    <div class="text-center" style="width: 25%;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 <%= (isPreparing || isShipping || isCompleted) ? 'bg-danger text-white shadow-sm' : 'bg-white border text-muted' %>" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                            <i class="fas fa-kitchen-set"></i>
+                        </div>
+                        <div class="small fw-bold <%= (isPreparing || isShipping || isCompleted) ? 'text-dark' : 'text-muted' %>">2. Chuẩn bị món</div>
+                        <div class="text-muted" style="font-size: 0.72rem;"><%= (isPreparing && !isShipping && !isCompleted) ? 'Đang nấu' : 'Bếp xong' %></div>
+                    </div>
+                    <!-- Bước 3: Đang giao hàng -->
+                    <div class="text-center" style="width: 25%;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 <%= (isShipping || isCompleted) ? 'bg-danger text-white shadow-sm' : 'bg-white border text-muted' %>" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                            <i class="fas fa-motorcycle"></i>
+                        </div>
+                        <div class="small fw-bold <%= (isShipping || isCompleted) ? 'text-dark' : 'text-muted' %>">3. Đang giao hàng</div>
+                        <div class="text-muted" style="font-size: 0.72rem;"><%= isShipping ? 'Shipper đang giao' : (isCompleted ? 'Đã giao' : 'Chờ ship') %></div>
+                    </div>
+                    <!-- Bước 4: Hoàn tất -->
+                    <div class="text-center" style="width: 25%;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-1 <%= isCompleted ? 'bg-success text-white shadow-sm' : 'bg-white border text-muted' %>" style="width: 36px; height: 36px; font-size: 0.9rem;">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="small fw-bold <%= isCompleted ? 'text-success' : 'text-muted' %>">4. Hoàn tất</div>
+                        <div class="text-muted" style="font-size: 0.72rem;"><%= isCompleted ? 'Thành công' : 'Chờ nhận' %></div>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- KHUNG HÓA ĐƠN CHUYÊN NGHIỆP -->
+    <div class="dash-card p-4 p-md-5" id="printableInvoice">
+        <!-- HEADER HÓA ĐƠN -->
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-4 mb-4">
+            <div>
+                <h4 class="fw-bold mb-1 text-dark">FASTFOOD EXPRESS</h4>
+                <p class="text-muted small mb-0">Hệ Thống Thức Ăn Nhanh & Giao Hàng Tận Nơi</p>
+                <small class="text-muted">Cầu Giấy, Hà Nội · Hotline: 1900 1234</small>
+            </div>
+            <div class="text-end">
+                <span class="status-badge <%= order.OrderStatus === 'Hoàn tất' ? 'badge-success' : (order.OrderStatus === 'Pending' ? 'badge-warning' : 'badge-danger') %> fs-6 px-3 py-1 mb-2">
+                    <%= order.OrderStatus %>
+                </span>
+                <div class="font-monospace text-muted small">HÓA ĐƠN BÁN LẺ</div>
+                <div class="fw-bold fs-6 text-dark"><code><%= order.OrderCode %></code></div>
+            </div>
+        </div>
+
+        <!-- THÔNG TIN ĐƠN HÀNG -->
+        <div class="row g-3 mb-4 small">
+            <div class="col-sm-6">
+                <div class="text-muted mb-1">Thời gian lập:</div>
+                <div class="fw-bold text-dark tabular-nums"><%= new Date(order.OrderDate).toLocaleString('vi-VN') %></div>
+            </div>
+            <div class="col-sm-6 text-sm-end">
+                <div class="text-muted mb-1">Nhân viên / Nguồn tiếp nhận:</div>
+                <div class="fw-bold text-dark"><%= order.Cashier ? order.Cashier.FullName : 'Hệ thống trực tuyến' %></div>
+            </div>
+        </div>
+
+        <% if (order.ShippingAddress) { %>
+            <div class="p-3 mb-4 rounded-3" style="background: #F8FAFC; border: 1px dashed var(--border-subtle);">
+                <div class="fw-semibold text-danger small mb-1"><i class="fas fa-truck-fast me-1"></i> THÔNG TIN GIAO HÀNG TẬN NƠI</div>
+                <div class="text-dark small mb-1"><strong>Địa chỉ nhận:</strong> <%= order.ShippingAddress %></div>
+                <% if (order.ShipperName) { %>
+                    <div class="text-dark small"><strong>Tài xế phụ trách:</strong> <%= order.ShipperName %> (<%= order.ShipperPhone %>) · <em><%= order.ShippingStatus || 'Đang giao' %></em></div>
+                <% } %>
+            </div>
+        <% } %>
+
+        <!-- DANH SÁCH MÓN ĂN -->
+        <div class="dash-table-wrap mb-4">
+            <table class="dash-table">
+                <thead>
+                    <tr>
+                        <th class="ps-3">Món Ăn</th>
+                        <th class="text-end">Đơn Giá</th>
+                        <th class="text-center" style="width: 80px;">SL</th>
+                        <th class="text-end pe-3">Thành Tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (details && details.length > 0) { %>
+                        <% details.forEach(function(d) { %>
+                            <tr>
+                                <td class="ps-3 fw-semibold text-dark"><%= d.Product ? d.Product.ProductName : 'Món ăn' %></td>
+                                <td class="text-end tabular-nums text-muted"><%= Number(d.UnitPrice).toLocaleString('vi-VN') %> đ</td>
+                                <td class="text-center tabular-nums fw-bold"><%= d.Quantity %></td>
+                                <td class="text-end pe-3 tabular-nums fw-bold text-dark"><%= (d.UnitPrice * d.Quantity).toLocaleString('vi-VN') %> đ</td>
+                            </tr>
+                        <% }); %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TỔNG KẾT TIỀN -->
+        <div class="d-flex justify-content-end mb-4">
+            <div style="width: 280px;">
+                <div class="d-flex justify-content-between small text-muted mb-2">
+                    <span>Tổng tiền món:</span>
+                    <span class="tabular-nums fw-semibold"><%= Number(order.SubTotal || order.TotalAmount).toLocaleString('vi-VN') %> đ</span>
+                </div>
+                <div class="d-flex justify-content-between small text-muted mb-2">
+                    <span>Phương thức thanh toán:</span>
+                    <span class="fw-semibold text-dark"><%= order.PaymentMethod %></span>
+                </div>
+                <div class="d-flex justify-content-between fs-5 fw-bold text-dark pt-2 border-top">
+                    <span>TỔNG CỘNG:</span>
+                    <span class="text-danger tabular-nums"><%= Number(order.TotalAmount).toLocaleString('vi-VN') %> đ</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- LỜI CẢM ƠN -->
+        <div class="text-center pt-3 border-top text-muted small">
+            <p class="mb-0">Cảm ơn quý khách đã tin tưởng và sử dụng dịch vụ của FastFood Express!</p>
+            <small>Mọi thắc mắc xin vui lòng liên hệ hotline hỗ trợ khách hàng.</small>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #printableInvoice, #printableInvoice * {
+        visibility: visible !important;
+    }
+    #printableInvoice {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    .no-print, .system-header, .system-sidebar, .system-footer, .sidebar-backdrop {
+        display: none !important;
+    }
+}
+</style>

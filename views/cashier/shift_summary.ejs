@@ -1,0 +1,73 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Báo Cáo Doanh Thu Ca Trực</h4>
+        <p class="text-muted small mb-0">Thống kê chi tiết doanh thu tiền mặt, VNPAY và đối soát két trong ca làm việc</p>
+    </div>
+    <a href="/Pos/EndShiftReport" class="btn-brand-primary">
+        <i class="fas fa-file-invoice"></i> Xem Biên Bản Đóng Ca
+    </a>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Thu tiền mặt tại quầy</span>
+            <div class="fs-4 fw-bold tabular-nums text-success">
+                <%= Number(cashRevenue).toLocaleString('vi-VN') %> <span class="fs-6 fw-normal text-muted">đ</span>
+            </div>
+            <div class="small text-muted mt-1">Được cộng trực tiếp vào tiền két</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Thu qua VNPAY QR</span>
+            <div class="fs-4 fw-bold tabular-nums text-primary">
+                <%= Number(transferRevenue).toLocaleString('vi-VN') %> <span class="fs-6 fw-normal text-muted">đ</span>
+            </div>
+            <div class="small text-muted mt-1">Chuyển thẳng tài khoản ngân hàng</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Tổng doanh thu ca</span>
+            <div class="fs-4 fw-bold tabular-nums text-danger">
+                <%= Number(totalRevenue).toLocaleString('vi-VN') %> <span class="fs-6 fw-normal text-muted">đ</span>
+            </div>
+            <div class="small text-muted mt-1"><%= shiftOrders.length %> hóa đơn thanh toán thành công</div>
+        </div>
+    </div>
+</div>
+
+<div class="dash-card">
+    <h6 class="fw-bold mb-3 text-dark">Danh Sách Hóa Đơn Phát Sinh Trong Ca</h6>
+    <div class="table-responsive">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Thời Gian</th>
+                    <th>Phương Thức</th>
+                    <th class="text-end">Số Tiền</th>
+                    <th>Trạng Thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (shiftOrders && shiftOrders.length > 0) { %>
+                    <% shiftOrders.forEach(function(o) { %>
+                        <tr>
+                            <td><code><%= o.OrderCode %></code></td>
+                            <td class="tabular-nums small text-muted"><%= new Date(o.OrderDate).toLocaleTimeString('vi-VN') %></td>
+                            <td><span class="small text-muted"><%= o.PaymentMethod %></span></td>
+                            <td class="text-end tabular-nums fw-bold text-dark"><%= Number(o.TotalAmount).toLocaleString('vi-VN') %> đ</td>
+                            <td><span class="status-badge badge-success"><i class="fas fa-check"></i> <%= o.OrderStatus %></span></td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Chưa có giao dịch nào được hoàn tất trong ca này.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

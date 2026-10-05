@@ -1,0 +1,161 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Quản Lý Tồn Kho Sản Phẩm</h4>
+        <p class="text-muted small mb-0">Theo dõi số lượng hàng thực tế, cảnh báo cạn kiệt và cập nhật kho nhanh chóng (Tự động load lại sau khi lưu)</p>
+    </div>
+</div>
+
+<% if (typeof query !== 'undefined' && (query.updated === '1' || query.updated === 'true')) { %>
+    <div class="alert alert-success py-2 px-3 small rounded-3 mb-4 d-flex align-items-center gap-2 shadow-sm border-success-subtle">
+        <i class="fas fa-check-circle fs-5 text-success"></i>
+        <div><b>Đã cập nhật kho thành công!</b> Số lượng hàng thực tế đã được đồng bộ hóa và hiển thị chính xác.</div>
+    </div>
+<% } %>
+
+<% 
+    const lowStockItems = products.filter(p => p.StockQuantity <= 10);
+    const totalInventoryUnits = products.reduce((acc, p) => acc + p.StockQuantity, 0);
+%>
+
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Tổng sản phẩm</span>
+            <div class="fs-4 fw-bold tabular-nums text-dark"><%= products.length %> <span class="fs-6 fw-normal text-muted">mặt hàng</span></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Tổng lượng tồn kho</span>
+            <div class="fs-4 fw-bold tabular-nums text-dark"><%= totalInventoryUnits %> <span class="fs-6 fw-normal text-muted">phần</span></div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Mặt hàng cần nhập thêm</span>
+            <div class="fs-4 fw-bold tabular-nums <%= lowStockItems.length > 0 ? 'text-danger' : 'text-success' %>">
+                <%= lowStockItems.length %> <span class="fs-6 fw-normal text-muted">mặt hàng</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="dash-card">
+            <span class="text-muted small fw-semibold text-uppercase d-block mb-1">Trạng thái kho</span>
+            <div class="fs-6 fw-semibold text-dark mt-1">
+                <% if (lowStockItems.length === 0) { %>
+                    <span class="status-badge badge-success"><i class="fas fa-check"></i> Đủ lượng phục vụ</span>
+                <% } else { %>
+                    <span class="status-badge badge-warning"><i class="fas fa-triangle-exclamation"></i> Có <%= lowStockItems.length %> món sắp hết</span>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="dash-table-wrap">
+    <div class="table-responsive">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">Mã SP</th>
+                    <th>Tên Món Ăn / Combo</th>
+                    <th>Danh Mục</th>
+                    <th style="width: 220px;">Mức Độ Tồn Kho</th>
+                    <th class="text-center" style="width: 140px;">Số Lượng</th>
+                    <th class="text-end" style="width: 200px;">Cập Nhật Kho</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% products.forEach(function(item) { %>
+                    <% const pct = Math.min(100, Math.round((item.StockQuantity / 60) * 100)); %>
+                    <tr>
+                        <td class="tabular-nums text-muted font-monospace small">#<%= item.ProductId %></td>
+                        <td>
+                            <div class="fw-semibold text-dark"><%= item.ProductName %></div>
+                        </td>
+                        <td>
+                            <span class="small text-muted"><%= item.Category ? item.Category.CategoryName : 'Khác' %></span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="flex-grow: 1; height: 6px; background: #E2E8F0; border-radius: 100px; overflow: hidden;">
+                                    <div style="width: <%= pct %>%; height: 100%; background: <%= item.StockQuantity <= 10 ? '#EF4444' : '#10B981' %>; border-radius: 100px;"></div>
+                                </div>
+                                <span class="small tabular-nums text-muted" style="width: 35px; font-size: 0.75rem;"><%= pct %>%</span>
+                            </div>
+                        </td>
+                        <td class="text-center tabular-nums">
+                            <% if (item.StockQuantity <= 10) { %>
+                                <span class="status-badge badge-danger">
+                                    <i class="fas fa-triangle-exclamation"></i> <%= item.StockQuantity %> (Sắp hết)
+                                </span>
+                            <% } else { %>
+                                <span class="status-badge badge-success">
+                                    <%= item.StockQuantity %> phần
+                                </span>
+                            <% } %>
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-light border py-1 px-2 fw-semibold" title="Cộng thêm 5 phần" onclick="quickAddStock(<%= item.ProductId %>, 5, this)">+5</button>
+                                <button type="button" class="btn btn-sm btn-light border py-1 px-2 fw-semibold" title="Cộng thêm 10 phần" onclick="quickAddStock(<%= item.ProductId %>, 10, this)">+10</button>
+                                <input type="number" id="stock_<%= item.ProductId %>" value="<%= item.StockQuantity %>" class="form-control form-control-custom text-center tabular-nums py-1" style="width: 70px; font-size: 0.85rem;" min="0" onkeydown="if(event.key === 'Enter') updateStock(<%= item.ProductId %>, this.nextElementSibling)" />
+                                <button type="button" class="btn btn-sm btn-dark py-1 px-2 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.8rem; border-radius: 6px;" onclick="updateStock(<%= item.ProductId %>, this)">
+                                    <i class="fas fa-floppy-disk"></i> <span>Lưu</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function quickAddStock(id, amount, btn) {
+    const input = document.getElementById('stock_' + id);
+    const current = parseInt(input.value, 10) || 0;
+    input.value = Math.max(0, current + amount);
+    const saveBtn = input.nextElementSibling;
+    updateStock(id, saveBtn || btn);
+}
+
+function updateStock(id, btnEl) {
+    const input = document.getElementById('stock_' + id);
+    const newStock = input.value;
+    input.disabled = true;
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>Lưu...</span>';
+    }
+    
+    fetch('/Admin/UpdateStock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'id=' + id + '&stock=' + newStock
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Nhấn lưu xong tự load lại trang luôn theo yêu cầu
+            window.location.href = '/Admin/Inventory?updated=1';
+        } else {
+            input.disabled = false;
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.innerHTML = '<i class="fas fa-floppy-disk"></i> <span>Lưu</span>';
+            }
+            alert('Lỗi: ' + (data.message || 'Không thể cập nhật.'));
+        }
+    })
+    .catch(() => {
+        input.disabled = false;
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = '<i class="fas fa-floppy-disk"></i> <span>Lưu</span>';
+        }
+        alert('Lỗi kết nối đến máy chủ!');
+    });
+}
+</script>

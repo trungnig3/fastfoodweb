@@ -1,0 +1,6 @@
+{
+  "name": "FastFood Web & POS",
+  "description": "Fast food online ordering portal, POS cashier system, and admin management dashboard.",
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"],
+  "permissions": []
+}

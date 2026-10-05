@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %> | FASTFOOD SYSTEM</title>
+    
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    
+    <!-- Typography & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            
+            --bg-base: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --border-subtle: #E2E8F0;
+            --border-hover: #CBD5E1;
+            
+            --text-heading: #0F172A;
+            --text-body: #334155;
+            --text-muted: #64748B;
+            
+            --primary: #E11D48;
+            --primary-hover: #BE123C;
+            --primary-light: #FFF1F2;
+            
+            --sidebar-width: 260px;
+            --header-height: 64px;
+            --footer-height: 52px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-base);
+            color: var(--text-body);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+
+        /* ==================== SYSTEM SHELL (HEADER + SIDEBAR + MAIN + FOOTER) ==================== */
+        .system-shell {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* 1. TOP HEADER (FULL-WIDTH) */
+        .system-header {
+            height: var(--header-height);
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-heading);
+        }
+
+        .brand-icon-box {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, #E11D48 0%, #EA580C 100%);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            box-shadow: 0 3px 8px rgba(225, 29, 72, 0.25);
+        }
+
+        .brand-text-name {
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.02em;
+            color: var(--text-heading);
+        }
+
+        .header-clock-pill {
+            font-size: 0.8rem;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            background: #F8FAFC;
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .live-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 6px #10B981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        .role-tag-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .role-admin {
+            background: #FFF1F2;
+            color: #E11D48;
+            border: 1px solid #FECDD3;
+        }
+        .role-cashier {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1px solid #BFDBFE;
+        }
+
+        .user-profile-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 10px;
+            background: #F8FAFC;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .user-avatar-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            background: #0F172A;
+            color: #FFFFFF;
+            font-weight: 700;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 2. BODY SECTION (SIDEBAR + MAIN CONTENT) */
+        .system-body {
+            display: flex;
+            flex: 1;
+            min-height: calc(100vh - var(--header-height) - var(--footer-height));
+        }
+
+        /* SIDEBAR (LEFT) */
+        .system-sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-surface);
+            border-right: 1px solid var(--border-subtle);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.68rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: #94A3B8;
+            padding: 14px 10px 6px 10px;
+        }
+
+        .sidebar-item-link {
+            display: flex;
+            align-items: center;
+            padding: 9px 12px;
+            color: var(--text-body);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border-radius: 8px;
+            margin-bottom: 2px;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .sidebar-item-link i {
+            width: 22px;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-right: 10px;
+            transition: color 0.15s ease;
+        }
+
+        .sidebar-item-link:hover {
+            background-color: #F8FAFC;
+            color: var(--text-heading);
+        }
+
+        .sidebar-item-link:hover i {
+            color: var(--primary);
+        }
+
+        .sidebar-item-link.active {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .sidebar-item-link.active i {
+            color: var(--primary);
+        }
+
+        .sidebar-item-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
+            background: var(--primary);
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* MAIN CONTENT (CENTER) */
+        .system-main {
+            flex: 1;
+            min-width: 0;
+            background-color: var(--bg-base);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .system-content {
+            padding: 24px 28px 40px 28px;
+            flex: 1;
+        }
+
+        /* 3. FOOTER (BOTTOM, FULL-WIDTH) */
+        .system-footer {
+            height: var(--footer-height);
+            background: var(--bg-surface);
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            z-index: 100;
+        }
+
+        /* Unified Card Style */
+        .dash-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dash-card:hover { border-color: var(--border-hover); }
+
+        /* Unified Table Style */
+        .dash-table-wrap {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+
+        .dash-table {
+            width: 100%;
+            margin-bottom: 0;
+            border-collapse: collapse;
+        }
+
+        .dash-table thead th {
+            background-color: #F8FAFC;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .dash-table tbody td {
+            padding: 14px 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.87rem;
+            color: var(--text-body);
+        }
+
+        .dash-table tbody tr:last-child td { border-bottom: none; }
+        .dash-table tbody tr:hover td { background-color: #FAFAFA; }
+
+        /* Modern Status Badges */
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            line-height: 1.3;
+        }
+        .badge-success { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+        .badge-warning { background: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+        .badge-danger  { background: #FEF2F2; color: #B91C1C; border: 1px solid #FECACA; }
+        .badge-info    { background: #EFF6FF; color: #1D4ED8; border: 1px solid #BFDBFE; }
+        .badge-neutral { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+
+        /* Unified Form Controls */
+        .form-control-custom, .form-select-custom {
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 9px 12px;
+            font-size: 0.9rem;
+            color: var(--text-heading);
+            background-color: #FFFFFF;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .form-control-custom:focus, .form-select-custom:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+        }
+
+        /* Buttons */
+        .btn-brand-primary {
+            background-color: var(--primary);
+            color: #FFFFFF;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 9px 16px;
+            border-radius: 8px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-brand-primary:hover {
+            background-color: var(--primary-hover);
+            color: #FFFFFF;
+            box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
+        }
+
+        .btn-brand-secondary {
+            background-color: #FFFFFF;
+            color: var(--text-body);
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-subtle);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .btn-brand-secondary:hover {
+            border-color: var(--border-hover);
+            background-color: #F8FAFC;
+            color: var(--text-heading);
+        }
+
+        /* Floating Toast */
+        .toast-container-custom {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast-custom {
+            pointer-events: auto;
+            background: #0F172A;
+            color: #FFFFFF;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-size: 0.88rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 280px;
+            max-width: 420px;
+            animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .toast-custom.toast-success { border-left: 4px solid #10B981; }
+        .toast-custom.toast-error { border-left: 4px solid #EF4444; }
+        .toast-custom.toast-info { border-left: 4px solid #3B82F6; }
+
+        @keyframes toastIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes toastOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(16px); } }
+
+        /* Responsive Mobile Drawer */
+        .mobile-toggle-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: var(--text-heading);
+            padding: 4px;
+        }
+
+        .sidebar-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 998;
+        }
+
+        @media (max-width: 992px) {
+            .system-sidebar {
+                position: fixed;
+                top: var(--header-height);
+                bottom: 0;
+                left: 0;
+                z-index: 999;
+                transform: translateX(-100%);
+                transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            .system-sidebar.show { transform: translateX(0); }
+            .sidebar-backdrop.show { display: block; }
+            .mobile-toggle-btn { display: block; }
+            .header-clock-pill { display: none; }
+            .system-content { padding: 16px; }
+            .system-footer { flex-direction: column; height: auto; padding: 12px 16px; gap: 4px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSystemSidebar()"></div>
+
+    <div class="system-shell">
+        
+        <!-- ==================== HEADER (FULL-WIDTH TOP) ==================== -->
+        <header class="system-header">
+            <div class="d-flex align-items-center gap-3">
+                <button class="mobile-toggle-btn" onclick="toggleSystemSidebar()" aria-label="Mở Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="<%= user && user.RoleName === 'Cashier' ? '/Cashier' : '/Admin' %>" class="header-brand">
+                    <span class="brand-icon-box"><i class="fas fa-hamburger"></i></span>
+                    <span class="brand-text-name">FASTFOOD SYSTEM</span>
+                </a>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 gap-sm-3">
+                <!-- LIVE REALTIME CLOCK -->
+                <div class="header-clock-pill d-none d-md-flex" id="liveHeaderClock">
+                    <span class="live-pulse-dot"></span>
+                    <span id="clockText">--:--:--</span>
+                </div>
+
+                <!-- ROLE-SPECIFIC QUICK NAVIGATION -->
+                <% if (user && user.RoleName === 'Cashier') { %>
+                    <a href="/Pos" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 fw-semibold" style="font-size: 0.8rem; border-radius: 6px;">
+                        <i class="fas fa-desktop"></i> Mở Quầy POS
+                    </a>
+                <% } %>
+
+                <!-- USER INFO & ROLE -->
+                <div class="user-profile-box">
+                    <div class="user-avatar-circle">
+                        <%= user && user.FullName ? user.FullName.charAt(0).toUpperCase() : 'U' %>
+                    </div>
+                    <div class="d-none d-sm-block text-start lh-sm">
+                        <div class="fw-bold small text-dark"><%= user ? user.FullName : 'Người dùng' %></div>
+                        <span class="role-tag-badge <%= user && user.RoleName === 'Admin' ? 'role-admin' : 'role-cashier' %>">
+                            <%= user && user.RoleName === 'Admin' ? 'ADMIN' : (user && user.RoleName === 'Cashier' ? 'THU NGÂN' : 'KHÁCH HÀNG') %>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- SIGN OUT -->
+                <a href="/Account/Logout" class="btn btn-sm btn-light border text-danger fw-semibold px-2 py-1" style="font-size: 0.8rem; border-radius: 6px;" title="Đăng xuất">
+                    <i class="fas fa-arrow-right-from-bracket"></i>
+                    <span class="d-none d-md-inline ms-1">Đăng xuất</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- ==================== BODY (SIDEBAR + MAIN CONTENT) ==================== -->
+        <div class="system-body">
+            
+            <!-- SIDEBAR (LEFT) -->
+            <aside class="system-sidebar" id="appSidebar">
+                
+                <% if (user && user.RoleName === 'Admin') { %>
+                    <!-- ==================== MENU ADMIN ==================== -->
+                    <div class="sidebar-section-title">DASHBOARD</div>
+                    <a href="/Admin/Index" class="sidebar-item-link <%= path === '/admin' || path === '/admin/index' ? 'active' : '' %>">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Bảng điều khiển</span>
+                    </a>
+
+                    <div class="sidebar-section-title">QUẢN LÝ</div>
+                    <a href="/Admin/Staff" class="sidebar-item-link <%= path.startsWith('/admin/staff') || path.startsWith('/admin/createstaff') || path.startsWith('/admin/editstaff') ? 'active' : '' %>">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Quản lý tài khoản</span>
+                    </a>
+                    <a href="/Admin/Customers" class="sidebar-item-link <%= path.startsWith('/admin/customers') ? 'active' : '' %>">
+                        <i class="fas fa-users"></i>
+                        <span>Quản lý khách hàng</span>
+                    </a>
+                    <a href="/Admin/Products" class="sidebar-item-link <%= path.startsWith('/admin/products') || path.startsWith('/admin/createproduct') || path.startsWith('/admin/editproduct') ? 'active' : '' %>">
+                        <i class="fas fa-utensils"></i>
+                        <span>Quản lý món ăn</span>
+                    </a>
+                    <a href="/Admin/Categories" class="sidebar-item-link <%= path.startsWith('/admin/categories') ? 'active' : '' %>">
+                        <i class="fas fa-layer-group"></i>
+                        <span>Quản lý danh mục</span>
+                    </a>
+
+                    <div class="sidebar-section-title">BÁN HÀNG & KHO</div>
+                    <a href="/Admin/Orders" class="sidebar-item-link <%= path.startsWith('/admin/orders') || path.startsWith('/admin/orderdetails') ? 'active' : '' %>">
+                        <i class="fas fa-receipt"></i>
+                        <span>Quản lý đơn hàng</span>
+                    </a>
+                    <a href="/Admin/Inventory" class="sidebar-item-link <%= path.startsWith('/admin/inventory') ? 'active' : '' %>">
+                        <i class="fas fa-boxes-stacked"></i>
+                        <span>Quản lý tồn kho</span>
+                    </a>
+
+                    <div class="sidebar-section-title">THỐNG KÊ</div>
+                    <a href="/Admin/RevenueReport" class="sidebar-item-link <%= path.startsWith('/admin/revenuereport') ? 'active' : '' %>">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>Doanh thu theo thời gian</span>
+                    </a>
+                    <a href="/Admin/Reports" class="sidebar-item-link <%= path.startsWith('/admin/reports') ? 'active' : '' %>">
+                        <i class="fas fa-fire"></i>
+                        <span>Món ăn bán chạy & KPI</span>
+                    </a>
+                    <a href="/Admin/SalaryReport" class="sidebar-item-link <%= path.startsWith('/admin/salaryreport') ? 'active' : '' %>">
+                        <i class="fas fa-wallet"></i>
+                        <span>Báo cáo ca làm & Lương</span>
+                    </a>
+
+                    <a href="/Account/Logout" class="sidebar-item-link text-danger mt-3">
+                        <i class="fas fa-arrow-right-from-bracket text-danger"></i>
+                        <span>Đăng xuất</span>
+                    </a>
+
+                <% } else if (user && user.RoleName === 'Cashier') { %>
+                    <!-- ==================== MENU THU NGÂN ==================== -->
+                    <div class="sidebar-section-title">DASHBOARD</div>
+                    <a href="/Cashier" class="sidebar-item-link <%= path === '/cashier' || path === '/cashier/index' ? 'active' : '' %>">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Bàn làm việc Thu Ngân</span>
+                    </a>
+
+                    <div class="sidebar-section-title">BÁN HÀNG</div>
+                    <a href="/Pos" class="sidebar-item-link <%= path === '/pos' ? 'active' : '' %>">
+                        <i class="fas fa-cash-register text-primary"></i>
+                        <span>Tạo đơn hàng (Quầy POS)</span>
+                    </a>
+                    <a href="/Cashier/Orders" class="sidebar-item-link <%= path.startsWith('/cashier/orders') ? 'active' : '' %>">
+                        <i class="fas fa-receipt"></i>
+                        <span>Quản lý đơn hàng</span>
+                    </a>
+
+                    <div class="sidebar-section-title">KHÁCH HÀNG</div>
+                    <a href="/Cashier/Customers" class="sidebar-item-link <%= path.startsWith('/cashier/customers') ? 'active' : '' %>">
+                        <i class="fas fa-address-book"></i>
+                        <span>Xem khách hàng & Điểm</span>
+                    </a>
+
+                    <div class="sidebar-section-title">THỐNG KÊ & CA</div>
+                    <a href="/Cashier/ShiftSummary" class="sidebar-item-link <%= path.startsWith('/cashier/shiftsummary') ? 'active' : '' %>">
+                        <i class="fas fa-wallet"></i>
+                        <span>Doanh thu ca & Giao dịch</span>
+                    </a>
+                    <a href="/Pos/EndShiftReport" class="sidebar-item-link <%= path.startsWith('/pos/endshiftreport') ? 'active' : '' %>">
+                        <i class="fas fa-calculator text-danger"></i>
+                        <span>Đối soát két & Kết ca</span>
+                    </a>
+
+                    <div class="sidebar-section-title">TÀI KHOẢN</div>
+                    <a href="/Cashier/Profile" class="sidebar-item-link <%= path.startsWith('/cashier/profile') ? 'active' : '' %>">
+                        <i class="fas fa-id-badge"></i>
+                        <span>Thông tin cá nhân</span>
+                    </a>
+                    <a href="/Account/Logout" class="sidebar-item-link text-danger mt-3">
+                        <i class="fas fa-arrow-right-from-bracket text-danger"></i>
+                        <span>Đăng xuất</span>
+                    </a>
+                <% } %>
+            </aside>
+
+            <!-- MAIN CONTENT (CENTER) -->
+            <main class="system-main">
+                <div class="system-content">
+                    <%- body %>
+                </div>
+            </main>
+        </div>
+
+        <!-- ==================== FOOTER (FULL-WIDTH BOTTOM) ==================== -->
+        <footer class="system-footer">
+            <div class="d-flex align-items-center gap-2">
+                <strong>FAST FOOD</strong>
+                <span>— Website Bán Đồ Ăn Nhanh & Hệ Thống Quản Lý POS</span>
+            </div>
+            <div>
+                <span>Phiên bản đồ án v2.5 · Hỗ trợ kỹ thuật: 1900 1234 · Bản quyền © 2026</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- GLOBAL TOAST CONTAINER -->
+    <div class="toast-container-custom" id="globalToastContainer"></div>
+
+    <!-- GLOBAL CONFIRM MODAL -->
+    <div class="modal fade" id="globalConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-body p-4 text-center">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 52px; height: 52px; background: #FFF1F2; color: #E11D48; font-size: 1.4rem;">
+                        <i class="fas fa-circle-question"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2" id="confirmModalTitle">Xác nhận thao tác</h5>
+                    <p class="text-muted small mb-4" id="confirmModalMessage">Bạn có chắc chắn muốn thực hiện hành động này không?</p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-light px-4 py-2 fw-semibold" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="button" class="btn btn-danger px-4 py-2 fw-semibold" id="confirmModalActionBtn">Xác nhận</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSystemSidebar() {
+            var sidebar = document.getElementById('appSidebar');
+            var backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar) sidebar.classList.toggle('show');
+            if (backdrop) backdrop.classList.toggle('show');
+        }
+
+        // Live Realtime Clock
+        function updateClock() {
+            var clockEl = document.getElementById('clockText');
+            if (!clockEl) return;
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var seconds = String(now.getSeconds()).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            clockEl.textContent = hours + ':' + minutes + ':' + seconds + ' · ' + day + '/' + month;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Modern Non-blocking Toast notification
+        function showToast(message, type) {
+            type = type || 'success';
+            var container = document.getElementById('globalToastContainer');
+            if (!container) return;
+
+            var toast = document.createElement('div');
+            toast.className = 'toast-custom toast-' + type;
+
+            var iconHtml = '<i class="fas fa-check-circle text-success fs-5"></i>';
+            if (type === 'error') {
+                iconHtml = '<i class="fas fa-circle-exclamation text-danger fs-5"></i>';
+            } else if (type === 'info') {
+                iconHtml = '<i class="fas fa-info-circle text-info fs-5"></i>';
+            }
+
+            toast.innerHTML = iconHtml + '<div class="flex-grow-1">' + message + '</div>';
+            container.appendChild(toast);
+
+            setTimeout(function() {
+                toast.style.animation = 'toastOut 0.25s forwards';
+                setTimeout(function() {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 250);
+            }, 3500);
+        }
+
+        // Custom Confirm Dialog
+        var confirmCallback = null;
+        function showConfirmDialog(title, message, onConfirm) {
+            document.getElementById('confirmModalTitle').textContent = title || 'Xác nhận thao tác';
+            document.getElementById('confirmModalMessage').textContent = message || 'Bạn có chắc chắn muốn tiếp tục không?';
+            confirmCallback = onConfirm;
+            var modal = new bootstrap.Modal(document.getElementById('globalConfirmModal'));
+            modal.show();
+        }
+
+        document.getElementById('confirmModalActionBtn').addEventListener('click', function() {
+            var modalEl = document.getElementById('globalConfirmModal');
+            var modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+            if (confirmCallback) {
+                confirmCallback();
+                confirmCallback = null;
+            }
+        });
+    </script>
+</body>
+</html>

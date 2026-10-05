@@ -1,0 +1,67 @@
+<div class="mx-auto" style="max-width: 600px;">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <a href="/Admin/Staff" class="btn-brand-secondary py-1 px-2" style="font-size: 0.8rem;">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <h4 class="fw-bold mb-0" style="color: var(--text-heading); letter-spacing: -0.02em;">
+            Chỉnh Sửa Nhân Viên #<%= editUser.UserId %>
+        </h4>
+    </div>
+
+    <div class="dash-card p-4">
+        <form method="post" action="/Admin/EditStaff/<%= editUser.UserId %>">
+            <input type="hidden" name="UserId" value="<%= editUser.UserId %>" />
+
+            <div class="mb-3">
+                <label class="form-label small fw-semibold text-muted text-uppercase">Họ và tên nhân viên <span class="text-danger">*</span></label>
+                <input type="text" name="FullName" class="form-control form-control-custom w-100" required value="<%= editUser.FullName %>" />
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Tên đăng nhập <span class="text-danger">*</span></label>
+                    <input type="text" name="Username" class="form-control form-control-custom w-100" required value="<%= editUser.Username %>" autocomplete="off" />
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Đổi mật khẩu mới</label>
+                    <input type="password" name="PasswordHash" class="form-control form-control-custom w-100" placeholder="Để trống nếu giữ nguyên" autocomplete="off" />
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Vai trò chức vụ <span class="text-danger">*</span></label>
+                    <select name="RoleId" class="form-select form-select-custom w-100">
+                        <% roles.forEach(function(r) { %>
+                            <option value="<%= r.RoleId %>" <%= editUser.RoleId === r.RoleId ? 'selected' : '' %>><%= r.RoleName %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Lương giờ (VND/h) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="number" name="HourlyRate" class="form-control form-control-custom" value="<%= editUser.HourlyRate %>" min="0" step="1000" />
+                        <span class="input-group-text bg-light text-muted border-start-0">đ</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 mb-4 rounded-3" style="background: #F8FAFC; border: 1px solid var(--border-subtle);">
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" name="IsActive" value="true" id="isActiveCheck" <%= editUser.IsActive ? 'checked' : '' %>>
+                    <label class="form-check-label fw-semibold text-dark small" for="isActiveCheck">
+                        Trạng thái kích hoạt tài khoản
+                    </label>
+                </div>
+                <small class="text-muted d-block ps-4">Cho phép nhân viên đăng nhập vào quầy bán hàng POS</small>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                <a href="/Admin/Staff" class="btn-brand-secondary">Hủy bỏ</a>
+                <button type="submit" class="btn-brand-primary">
+                    <i class="fas fa-check"></i> Cập Nhật Nhân Viên
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

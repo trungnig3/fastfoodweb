@@ -1,0 +1,159 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Quản Lý Danh Mục Món Ăn</h4>
+        <p class="text-muted small mb-0">Thiết lập các nhóm thực đơn để phân loại món ăn tại quầy POS và trang đặt món Online</p>
+    </div>
+    <button type="button" class="btn-brand-primary" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+        <i class="fas fa-plus"></i> Thêm Danh Mục Mới
+    </button>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="dash-table-wrap">
+            <div class="table-responsive">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Mã</th>
+                            <th>Tên Danh Mục</th>
+                            <th class="text-center" style="width: 160px;">Số Món Trực Thuộc</th>
+                            <th class="text-end" style="width: 140px;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (categories && categories.length > 0) { %>
+                            <% categories.forEach(function(cat) { %>
+                                <% const count = products.filter(p => p.CategoryId === cat.CategoryId).length; %>
+                                <tr>
+                                    <td class="tabular-nums font-monospace text-muted small">#<%= cat.CategoryId %></td>
+                                    <td>
+                                        <div class="fw-bold text-dark"><%= cat.CategoryName %></div>
+                                    </td>
+                                    <td class="text-center tabular-nums">
+                                        <span class="status-badge <%= count > 0 ? 'badge-success' : 'badge-neutral' %>">
+                                            <%= count %> món ăn
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;" onclick="openEditCategoryModal(<%= cat.CategoryId %>, '<%= cat.CategoryName.replace(/'/g, "\\'") %>')">
+                                                <i class="fas fa-edit"></i> Sửa
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;" onclick="deleteCategory(<%= cat.CategoryId %>, '<%= cat.CategoryName.replace(/'/g, "\\'") %>', <%= count %>)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">Chưa có danh mục nào.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- CỘT GỢI Ý & HƯỚNG DẪN -->
+    <div class="col-lg-4">
+        <div class="dash-card h-100">
+            <h6 class="fw-bold mb-2 text-dark"><i class="fas fa-circle-info text-primary me-2"></i>Quy chuẩn danh mục</h6>
+            <p class="text-muted small mb-3">
+                Danh mục giúp khách hàng và nhân viên thu ngân nhanh chóng lọc món ăn theo sở thích hoặc bữa ăn.
+            </p>
+            <div class="p-3 rounded-3 small mb-3" style="background: #F8FAFC; border: 1px dashed var(--border-subtle);">
+                <div class="fw-semibold text-dark mb-1">Các nhóm gợi ý:</div>
+                <ul class="mb-0 ps-3 text-muted">
+                    <li>Đồ ăn nhanh (Gà rán, Burger, Khoai...)</li>
+                    <li>Combo Tiết Kiệm (Phần ăn kết hợp)</li>
+                    <li>Đồ uống & Tráng miệng</li>
+                </ul>
+            </div>
+            <div class="small text-muted">
+                <i class="fas fa-triangle-exclamation text-warning me-1"></i> Lưu ý: Không thể xóa danh mục nếu đang có món ăn trực thuộc.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL THÊM DANH MỤC -->
+<div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark"><i class="fas fa-plus-circle text-primary me-2"></i>Thêm Danh Mục Món Mới</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Admin/CreateCategory" method="post">
+                <div class="modal-body p-4">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Tên danh mục <span class="text-danger">*</span></label>
+                    <input type="text" name="CategoryName" class="form-control form-control-custom w-100" required placeholder="Ví dụ: Đồ Uống & Nước Ngọt" />
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn-brand-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-brand-primary">Thêm Danh Mục</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL SỬA DANH MỤC -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h6 class="modal-title fw-bold text-dark"><i class="fas fa-edit text-primary me-2"></i>Chỉnh Sửa Danh Mục</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="/Admin/EditCategory" method="post">
+                <input type="hidden" name="CategoryId" id="editCategoryId" />
+                <div class="modal-body p-4">
+                    <label class="form-label small fw-semibold text-muted text-uppercase">Tên danh mục mới <span class="text-danger">*</span></label>
+                    <input type="text" name="CategoryName" id="editCategoryName" class="form-control form-control-custom w-100" required />
+                </div>
+                <div class="modal-footer border-top py-2">
+                    <button type="button" class="btn-brand-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn-brand-primary">Lưu Thay Đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openEditCategoryModal(id, name) {
+    document.getElementById('editCategoryId').value = id;
+    document.getElementById('editCategoryName').value = name;
+    var modal = new bootstrap.Modal(document.getElementById('editCategoryModal'));
+    modal.show();
+}
+
+function deleteCategory(id, name, count) {
+    if (count > 0) {
+        showToast('Không thể xóa danh mục "' + name + '" vì đang có ' + count + ' món ăn trực thuộc!', 'warning');
+        return;
+    }
+    showConfirmDialog('Xóa Danh Mục', 'Bạn có chắc chắn muốn xóa danh mục "' + name + '" không?', function() {
+        fetch('/Admin/DeleteCategory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'id=' + id
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                showToast('Đã xóa danh mục thành công!', 'success');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast(d.message || 'Lỗi khi xóa danh mục!', 'error');
+            }
+        })
+        .catch(() => showToast('Lỗi kết nối máy chủ!', 'error'));
+    });
+}
+</script>

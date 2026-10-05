@@ -1,0 +1,83 @@
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1" style="color: var(--text-heading); letter-spacing: -0.02em;">Quản Lý Đơn Hàng & Thu Tiền</h4>
+        <p class="text-muted small mb-0">Theo dõi trạng thái đơn hàng của thu ngân và cập nhật thanh toán</p>
+    </div>
+    <a href="/Pos" class="btn-brand-primary">
+        <i class="fas fa-plus"></i> Tạo Đơn Mới Tại Quầy (POS)
+    </a>
+</div>
+
+<div class="dash-table-wrap">
+    <div class="table-responsive">
+        <table class="dash-table">
+            <thead>
+                <tr>
+                    <th style="width: 140px;">Mã Đơn</th>
+                    <th>Thời Gian</th>
+                    <th>Phương Thức</th>
+                    <th class="text-end">Tổng Tiền</th>
+                    <th class="text-center" style="width: 150px;">Trạng Thái</th>
+                    <th class="text-end" style="width: 110px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (orders && orders.length > 0) { %>
+                    <% orders.forEach(function(item) { %>
+                        <tr>
+                            <td>
+                                <a href="/Cashier/OrderDetails/<%= item.OrderId %>" class="fw-bold text-dark text-decoration-none">
+                                    <code><%= item.OrderCode %></code>
+                                </a>
+                            </td>
+                            <td class="tabular-nums small text-muted">
+                                <%= new Date(item.OrderDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) %> · <%= new Date(item.OrderDate).toLocaleDateString('vi-VN') %>
+                            </td>
+                            <td>
+                                <span class="small text-muted"><%= item.PaymentMethod %></span>
+                            </td>
+                            <td class="text-end tabular-nums fw-bold text-dark">
+                                <%= Number(item.TotalAmount).toLocaleString('vi-VN') %> đ
+                            </td>
+                            <td class="text-center">
+                                <select class="form-select form-select-custom py-1 px-2 text-center" style="font-size: 0.78rem;" onchange="changeCashierOrderStatus(<%= item.OrderId %>, this.value)">
+                                    <option value="Pending" <%= item.OrderStatus === "Pending" ? 'selected' : '' %>>Chờ xử lý</option>
+                                    <option value="Hoàn tất" <%= item.OrderStatus === "Hoàn tất" || item.OrderStatus === "Completed" ? 'selected' : '' %>>Hoàn tất</option>
+                                    <option value="Đã hủy" <%= item.OrderStatus === "Đã hủy" ? 'selected' : '' %>>Đã hủy</option>
+                                </select>
+                            </td>
+                            <td class="text-end">
+                                <a href="/Cashier/OrderDetails/<%= item.OrderId %>" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 0.78rem; border-radius: 6px;">
+                                    <i class="fas fa-print me-1"></i> In HĐ
+                                </a>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">Chưa có hóa đơn nào thuộc ca làm việc hiện tại.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function changeCashierOrderStatus(orderId, newStatus) {
+    fetch('/Admin/UpdateOrderStatus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'id=' + orderId + '&status=' + encodeURIComponent(newStatus)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Đã cập nhật đơn #' + orderId + ' thành: ' + newStatus, 'success');
+        } else {
+            showToast('Lỗi: ' + (data.message || 'Không thể cập nhật.'), 'error');
+        }
+    })
+    .catch(() => showToast('Lỗi kết nối máy chủ!', 'error'));
+}
+</script>
