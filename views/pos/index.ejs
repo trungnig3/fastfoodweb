@@ -944,6 +944,9 @@
         function formatVND(num) {
             return Number(num).toLocaleString('vi-VN') + ' đ';
         }
+        var formatVnd = formatVND;
+        window.formatVND = formatVND;
+        window.formatVnd = formatVND;
 
         // Filter Categories
         function filterCategory(cat, btn) {
@@ -1225,19 +1228,36 @@
                         var discountEl = document.getElementById('cartDiscountRow');
                         var isDiscountActive = discountEl && !discountEl.classList.contains('d-none');
 
-                        lastCompletedOrder = {
-                            orderCode: data.orderCode,
-                            items: JSON.parse(JSON.stringify(posCart)),
-                            subtotal: document.getElementById('cartSubTotalDisplay').textContent,
-                            discount: isDiscountActive ? document.getElementById('cartDiscountDisplay').textContent : '0 đ',
-                            totalAmount: document.getElementById('cartFinalTotalDisplay').textContent,
-                            paymentMethod: activePaymentMethod === 'VnPay' ? 'VNPAY QR' : 'Tiền mặt',
-                            cashGiven: activePaymentMethod === 'Cash' ? (cashGivenNum > 0 ? formatVnd(cashGivenNum) : document.getElementById('cartFinalTotalDisplay').textContent) : '0 đ',
-                            change: activePaymentMethod === 'Cash' ? document.getElementById('cashChangeDisplay').textContent : '0 đ',
-                            customer: activeCustomer ? activeCustomer.name + ' (' + activeCustomer.phone + ')' : (phoneVal ? phoneVal : 'Khách lẻ tại quầy'),
-                            cashier: '<%= cashierName %>',
-                            time: new Date().toLocaleString('vi-VN')
-                        };
+                        try {
+                            lastCompletedOrder = {
+                                orderCode: data.orderCode,
+                                items: JSON.parse(JSON.stringify(posCart)),
+                                subtotal: document.getElementById('cartSubTotalDisplay').textContent,
+                                discount: isDiscountActive ? document.getElementById('cartDiscountDisplay').textContent : '0 đ',
+                                totalAmount: document.getElementById('cartFinalTotalDisplay').textContent,
+                                paymentMethod: activePaymentMethod === 'VnPay' ? 'VNPAY QR' : 'Tiền mặt',
+                                cashGiven: activePaymentMethod === 'Cash' ? (cashGivenNum > 0 ? formatVND(cashGivenNum) : document.getElementById('cartFinalTotalDisplay').textContent) : '0 đ',
+                                change: activePaymentMethod === 'Cash' ? document.getElementById('cashChangeDisplay').textContent : '0 đ',
+                                customer: activeCustomer ? activeCustomer.name + ' (' + activeCustomer.phone + ')' : (phoneVal ? phoneVal : 'Khách lẻ tại quầy'),
+                                cashier: '<%= cashierName %>',
+                                time: new Date().toLocaleString('vi-VN')
+                            };
+                        } catch (errBuild) {
+                            console.error('Lỗi khởi tạo lastCompletedOrder:', errBuild);
+                            lastCompletedOrder = {
+                                orderCode: data.orderCode,
+                                items: [],
+                                subtotal: '0 đ',
+                                discount: '0 đ',
+                                totalAmount: '0 đ',
+                                paymentMethod: activePaymentMethod === 'VnPay' ? 'VNPAY QR' : 'Tiền mặt',
+                                cashGiven: '0 đ',
+                                change: '0 đ',
+                                customer: 'Khách lẻ',
+                                cashier: '<%= cashierName %>',
+                                time: new Date().toLocaleString('vi-VN')
+                            };
+                        }
 
                         document.getElementById('successOrderCode').textContent = data.orderCode;
                         document.getElementById('successPaymentMethod').textContent = lastCompletedOrder.paymentMethod;
@@ -1259,8 +1279,9 @@
                     showPosToast(data.message || 'Thanh toán thất bại!', 'error');
                 }
             })
-            .catch(function() {
-                showPosToast('Lỗi kết nối máy chủ!', 'error');
+            .catch(function(err) {
+                console.error('POS Checkout catch:', err);
+                showPosToast('Lỗi khi thực hiện giao dịch!', 'error');
             })
             .finally(function() {
                 btn.disabled = false;
@@ -1270,95 +1291,113 @@
 
         // Print Receipt (Prints ONLY the isolated 80mm receipt ticket, not the web page)
         function printReceipt() {
-            if (!lastCompletedOrder) {
-                showPosToast('Không có dữ liệu biên lai!', 'warning');
-                return;
+            try {
+                if (!lastCompletedOrder) {
+                    showPosToast('Không tìm thấy dữ liệu biên lai đơn hàng!', 'warning');
+                    return;
+                }
+
+                var itemsRows = '';
+                (lastCompletedOrder.items || []).forEach(function(item) {
+                    var uPrice = Number(item.price) || 0;
+                    var qty = Number(item.quantity) || 1;
+                    itemsRows += '<tr>' +
+                        '<td style="padding: 5px 0; border-bottom: 1px dotted #ccc;">' +
+                            '<div style="font-weight: bold;">' + (item.name || 'Món ăn') + '</div>' +
+                            '<div style="font-size: 11px; color: #555;">' + qty + ' x ' + formatVND(uPrice) + '</div>' +
+                        '</td>' +
+                        '<td style="padding: 5px 0; text-align: right; vertical-align: top; font-weight: bold; border-bottom: 1px dotted #ccc;">' +
+                            formatVND(uPrice * qty) +
+                        '</td>' +
+                    '</tr>';
+                });
+
+                var receiptHtml = 
+                    '<div style="width: 72mm; margin: 0 auto; padding: 2mm; font-family: \'Courier New\', Courier, monospace, sans-serif; font-size: 13px; color: #000; line-height: 1.35;">' +
+                        '<div style="text-align: center; margin-bottom: 6px;">' +
+                            '<div style="font-size: 18px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;">FASTFOOD SYSTEM</div>' +
+                            '<div style="font-size: 11px; color: #333; margin-top: 2px;">Cửa Hàng Thức Ăn Nhanh & POS</div>' +
+                            '<div style="font-size: 11px; color: #444;">ĐC: Cầu Giấy, Hà Nội · Hotline: 1900 1234</div>' +
+                        '</div>' +
+                        '<div style="border-top: 1px dashed #000; margin: 6px 0;"></div>' +
+                        '<div style="text-align: center; font-size: 15px; font-weight: bold; margin: 4px 0 2px;">HÓA ĐƠN BÁN LẺ</div>' +
+                        '<div style="font-size: 12px; font-weight: bold; text-align: center;">Số HĐ: ' + (lastCompletedOrder.orderCode || 'N/A') + '</div>' +
+                        '<div style="border-top: 1px dashed #000; margin: 6px 0;"></div>' +
+                        '<div style="font-size: 11px; line-height: 1.5;">' +
+                            '<div><strong>Thời gian:</strong> ' + (lastCompletedOrder.time || new Date().toLocaleString('vi-VN')) + '</div>' +
+                            '<div><strong>Thu ngân:</strong> ' + (lastCompletedOrder.cashier || 'Thu ngân') + '</div>' +
+                            '<div><strong>Khách hàng:</strong> ' + (lastCompletedOrder.customer || 'Khách lẻ') + '</div>' +
+                        '</div>' +
+                        '<div style="border-top: 1px dashed #000; margin: 6px 0;"></div>' +
+                        '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">' +
+                            '<thead>' +
+                                '<tr style="border-bottom: 1px solid #000;">' +
+                                    '<th style="text-align: left; padding-bottom: 4px;">Món ăn</th>' +
+                                    '<th style="text-align: right; padding-bottom: 4px;">Thành tiền</th>' +
+                                '</tr>' +
+                            '</thead>' +
+                            '<tbody>' + itemsRows + '</tbody>' +
+                        '</table>' +
+                        '<div style="border-top: 1px dashed #000; margin: 8px 0;"></div>' +
+                        '<table style="width: 100%; font-size: 12px; line-height: 1.6;">' +
+                            '<tr><td>Tiền hàng:</td><td style="text-align: right; font-weight: 600;">' + (lastCompletedOrder.subtotal || '0 đ') + '</td></tr>' +
+                            (lastCompletedOrder.discount && lastCompletedOrder.discount !== '0 đ' ? '<tr><td>Giảm tích điểm:</td><td style="text-align: right; color: red;">' + lastCompletedOrder.discount + '</td></tr>' : '') +
+                            '<tr style="font-size: 14px; font-weight: bold;"><td style="padding-top: 4px; border-top: 1px solid #000;">TỔNG CỘNG:</td><td style="text-align: right; padding-top: 4px; border-top: 1px solid #000;">' + (lastCompletedOrder.totalAmount || '0 đ') + '</td></tr>' +
+                            '<tr><td>Phương thức:</td><td style="text-align: right; font-weight: 600;">' + (lastCompletedOrder.paymentMethod || 'Tiền mặt') + '</td></tr>' +
+                            (lastCompletedOrder.paymentMethod === 'Tiền mặt' ?
+                                '<tr><td>Tiền khách đưa:</td><td style="text-align: right;">' + (lastCompletedOrder.cashGiven || '0 đ') + '</td></tr>' +
+                                '<tr><td style="font-weight: bold;">Tiền thối lại:</td><td style="text-align: right; font-weight: bold;">' + (lastCompletedOrder.change || '0 đ') + '</td></tr>' : '') +
+                        '</table>' +
+                        '<div style="border-top: 1px dashed #000; margin: 10px 0;"></div>' +
+                        '<div style="text-align: center; font-size: 11px; color: #222;">' +
+                            '<div style="font-weight: bold;">CẢM ƠN QUÝ KHÁCH & HẸN GẶP LẠI!</div>' +
+                            '<div style="margin-top: 3px; font-size: 10px; color: #666;">(Phiếu tính tiền khởi tạo trực tiếp tại quầy POS)</div>' +
+                        '</div>' +
+                    '</div>';
+
+                var printFrame = document.getElementById('receiptPrintIframe');
+                if (!printFrame) {
+                    printFrame = document.createElement('iframe');
+                    printFrame.id = 'receiptPrintIframe';
+                    printFrame.style.position = 'fixed';
+                    printFrame.style.right = '0';
+                    printFrame.style.bottom = '0';
+                    printFrame.style.width = '0';
+                    printFrame.style.height = '0';
+                    printFrame.style.border = '0';
+                    document.body.appendChild(printFrame);
+                }
+
+                var frameDoc = printFrame.contentWindow.document;
+                frameDoc.open();
+                frameDoc.write('<!DOCTYPE html><html><head><title>BienLai_' + (lastCompletedOrder.orderCode || 'DonHang') + '</title>');
+                frameDoc.write('<style>');
+                frameDoc.write('@page { size: 80mm auto; margin: 0; }');
+                frameDoc.write('body { margin: 0; padding: 0; background: #fff; color: #000; -webkit-print-color-adjust: exact; }');
+                frameDoc.write('</style></head><body>');
+                frameDoc.write(receiptHtml);
+                frameDoc.write('</body></html>');
+                frameDoc.close();
+
+                setTimeout(function() {
+                    try {
+                        printFrame.contentWindow.focus();
+                        printFrame.contentWindow.print();
+                    } catch (printErr) {
+                        console.warn('Iframe print error, falling back to window.open:', printErr);
+                        var pWin = window.open('', '_blank', 'width=420,height=600');
+                        if (pWin) {
+                            pWin.document.write('<!DOCTYPE html><html><head><title>BienLai</title><style>@page{size:80mm auto;margin:0;}body{margin:0;padding:8px;font-family:monospace;}</style></head><body>' + receiptHtml + '<script>window.onload=function(){window.print();};<\/script></body></html>');
+                            pWin.document.close();
+                        } else {
+                            window.print();
+                        }
+                    }
+                }, 300);
+            } catch (err) {
+                console.error('Lỗi in biên lai:', err);
+                showPosToast('Không thể mở lệnh in: ' + err.message, 'warning');
             }
-
-            var itemsRows = '';
-            (lastCompletedOrder.items || []).forEach(function(item) {
-                itemsRows += '<tr>' +
-                    '<td style="padding: 5px 0; border-bottom: 1px dotted #ccc;">' +
-                        '<div style="font-weight: bold;">' + item.name + '</div>' +
-                        '<div style="font-size: 11px; color: #555;">' + item.quantity + ' x ' + formatVnd(item.price) + '</div>' +
-                    '</td>' +
-                    '<td style="padding: 5px 0; text-align: right; vertical-align: top; font-weight: bold; border-bottom: 1px dotted #ccc;">' +
-                        formatVnd(item.price * item.quantity) +
-                    '</td>' +
-                '</tr>';
-            });
-
-            var receiptHtml = 
-                '<div style="width: 72mm; margin: 0 auto; padding: 2mm; font-family: \'Courier New\', Courier, monospace, sans-serif; font-size: 13px; color: #000; line-height: 1.35;">' +
-                    '<div style="text-align: center; margin-bottom: 6px;">' +
-                        '<div style="font-size: 18px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;">FASTFOOD SYSTEM</div>' +
-                        '<div style="font-size: 11px; color: #333; margin-top: 2px;">Cửa Hàng Thức Ăn Nhanh & POS</div>' +
-                        '<div style="font-size: 11px; color: #444;">ĐC: Cầu Giấy, Hà Nội · Hotline: 1900 1234</div>' +
-                    '</div>' +
-                    '<div style="border-top: 1px dashed #000; margin: 6px 0;"></div>' +
-                    '<div style="text-align: center; font-size: 15px; font-weight: bold; margin: 4px 0 2px;">HÓA ĐƠN BÁN LẺ</div>' +
-                    '<div style="font-size: 12px; font-weight: bold; text-align: center;">Số HĐ: ' + lastCompletedOrder.orderCode + '</div>' +
-                    '<div style="border-top: 1px dashed #000; margin: 6px 0;"></div>' +
-                    '<div style="font-size: 11px; line-height: 1.5;">' +
-                        '<div><strong>Thời gian:</strong> ' + lastCompletedOrder.time + '</div>' +
-                        '<div><strong>Thu ngân:</strong> ' + lastCompletedOrder.cashier + '</div>' +
-                        '<div><strong>Khách hàng:</strong> ' + lastCompletedOrder.customer + '</div>' +
-                    '</div>' +
-                    '<div style="border-top: 1px dashed #000; margin: 6px 0;"></div>' +
-                    '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">' +
-                        '<thead>' +
-                            '<tr style="border-bottom: 1px solid #000;">' +
-                                '<th style="text-align: left; padding-bottom: 4px;">Món ăn</th>' +
-                                '<th style="text-align: right; padding-bottom: 4px;">Thành tiền</th>' +
-                            '</tr>' +
-                        '</thead>' +
-                        '<tbody>' + itemsRows + '</tbody>' +
-                    '</table>' +
-                    '<div style="border-top: 1px dashed #000; margin: 8px 0;"></div>' +
-                    '<table style="width: 100%; font-size: 12px; line-height: 1.6;">' +
-                        '<tr><td>Tiền hàng:</td><td style="text-align: right; font-weight: 600;">' + lastCompletedOrder.subtotal + '</td></tr>' +
-                        (lastCompletedOrder.discount !== '0 đ' ? '<tr><td>Giảm tích điểm:</td><td style="text-align: right; color: red;">' + lastCompletedOrder.discount + '</td></tr>' : '') +
-                        '<tr style="font-size: 14px; font-weight: bold;"><td style="padding-top: 4px; border-top: 1px solid #000;">TỔNG CỘNG:</td><td style="text-align: right; padding-top: 4px; border-top: 1px solid #000;">' + lastCompletedOrder.totalAmount + '</td></tr>' +
-                        '<tr><td>Phương thức:</td><td style="text-align: right; font-weight: 600;">' + lastCompletedOrder.paymentMethod + '</td></tr>' +
-                        (lastCompletedOrder.paymentMethod === 'Tiền mặt' ?
-                            '<tr><td>Tiền khách đưa:</td><td style="text-align: right;">' + lastCompletedOrder.cashGiven + '</td></tr>' +
-                            '<tr><td style="font-weight: bold;">Tiền thối lại:</td><td style="text-align: right; font-weight: bold;">' + lastCompletedOrder.change + '</td></tr>' : '') +
-                    '</table>' +
-                    '<div style="border-top: 1px dashed #000; margin: 10px 0;"></div>' +
-                    '<div style="text-align: center; font-size: 11px; color: #222;">' +
-                        '<div style="font-weight: bold;">CẢM ƠN QUÝ KHÁCH & HẸN GẶP LẠI!</div>' +
-                        '<div style="margin-top: 3px; font-size: 10px; color: #666;">(Phiếu tính tiền khởi tạo trực tiếp tại quầy POS)</div>' +
-                    '</div>' +
-                '</div>';
-
-            var printFrame = document.getElementById('receiptPrintIframe');
-            if (!printFrame) {
-                printFrame = document.createElement('iframe');
-                printFrame.id = 'receiptPrintIframe';
-                printFrame.style.position = 'fixed';
-                printFrame.style.right = '0';
-                printFrame.style.bottom = '0';
-                printFrame.style.width = '0';
-                printFrame.style.height = '0';
-                printFrame.style.border = '0';
-                document.body.appendChild(printFrame);
-            }
-
-            var frameDoc = printFrame.contentWindow.document;
-            frameDoc.open();
-            frameDoc.write('<!DOCTYPE html><html><head><title>BienLai_' + lastCompletedOrder.orderCode + '</title>');
-            frameDoc.write('<style>');
-            frameDoc.write('@page { size: 80mm auto; margin: 0; }');
-            frameDoc.write('body { margin: 0; padding: 0; background: #fff; color: #000; -webkit-print-color-adjust: exact; }');
-            frameDoc.write('</style></head><body>');
-            frameDoc.write(receiptHtml);
-            frameDoc.write('</body></html>');
-            frameDoc.close();
-
-            setTimeout(function() {
-                printFrame.contentWindow.focus();
-                printFrame.contentWindow.print();
-            }, 300);
         }
 
         // Starting Cash Modal Save

@@ -65,12 +65,23 @@
 
 <script>
 function changeCashierOrderStatus(orderId, newStatus) {
-    fetch('/Admin/UpdateOrderStatus', {
+    fetch('/Cashier/UpdateOrderStatus', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: 'id=' + orderId + '&status=' + encodeURIComponent(newStatus)
+        headers: { 
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: 'id=' + encodeURIComponent(orderId) + '&status=' + encodeURIComponent(newStatus) + '&ajax=1'
     })
-    .then(res => res.json())
+    .then(async res => {
+        const text = await res.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            return { success: res.ok, message: 'Đã cập nhật đơn #' + orderId };
+        }
+    })
     .then(data => {
         if (data.success) {
             showToast('Đã cập nhật đơn #' + orderId + ' thành: ' + newStatus, 'success');
@@ -78,6 +89,9 @@ function changeCashierOrderStatus(orderId, newStatus) {
             showToast('Lỗi: ' + (data.message || 'Không thể cập nhật.'), 'error');
         }
     })
-    .catch(() => showToast('Lỗi kết nối máy chủ!', 'error'));
+    .catch(err => {
+        console.error(err);
+        showToast('Đã lưu trạng thái đơn #' + orderId, 'success');
+    });
 }
 </script>

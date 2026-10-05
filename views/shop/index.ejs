@@ -743,6 +743,10 @@
             </a>
 
             <div class="d-flex align-items-center gap-2">
+                <button type="button" class="nav-btn-link text-primary fw-semibold" onclick="openFloatingAiChat()">
+                    <i class="fas fa-robot text-primary"></i>
+                    <span>Trợ Lý AI</span>
+                </button>
                 <button type="button" class="nav-btn-link" data-bs-toggle="modal" data-bs-target="#feedbackModal">
                     <i class="fas fa-comment-dots text-muted"></i>
                     <span>Khiếu Nại / Góp Ý</span>
@@ -790,16 +794,16 @@
 
     <!-- MAIN BODY -->
     <div class="container-fluid px-3 px-xl-4 py-4 my-2">
-        <!-- CẢNH BÁO / NHẮC NHỞ MÓN HẾT HÀNG TRÊN ĐẦU TRANG -->
+        <!-- THÔNG BÁO MÓN ĂN TẠM HẾT HÀNG TRÊN ĐẦU TRANG -->
         <% 
             const currentOutOfStock = (typeof outOfStockItems !== 'undefined' && outOfStockItems) ? outOfStockItems : products.filter(p => p.StockQuantity <= 0 || !p.IsActive);
         %>
         <% if (currentOutOfStock && currentOutOfStock.length > 0) { %>
-            <div class="alert alert-warning border-warning-subtle shadow-sm py-3 px-4 rounded-3 mb-4 d-flex align-items-center gap-3">
-                <span class="fs-3 text-warning"><i class="fas fa-triangle-exclamation"></i></span>
+            <div class="alert alert-info border-info-subtle shadow-sm py-3 px-4 rounded-3 mb-4 d-flex align-items-center gap-3" style="background: #F0F9FF; border: 1px solid #BAE6FD;">
+                <span class="fs-3 text-primary"><i class="fas fa-bullhorn"></i></span>
                 <div class="flex-grow-1">
                     <div class="fw-bold text-dark mb-0">
-                        ⚠️ CẢNH BÁO THỰC ĐƠN: Hiện có <%= currentOutOfStock.length %> món ăn đã tạm hết hàng trong kho!
+                        📢 THÔNG BÁO THỰC ĐƠN: Hiện có <%= currentOutOfStock.length %> món ăn đã tạm hết hàng trong kho!
                     </div>
                     <div class="small text-muted mt-1">
                         Món tạm ngưng phục vụ: 
@@ -960,12 +964,30 @@
             </div>
 
             <!-- CỘT 3: GIỎ HÀNG & CHATBOT (PHẢI) -->
-            <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12">
-                <!-- GIỎ HÀNG -->
-                <div class="cart-panel sticky-top" style="top: 80px;">
+            <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12" id="shopSidebarRight">
+                <!-- THANH CHỌN TAB GIỎ HÀNG & TRỢ LÝ AI (ĐẢM BẢO KHÔNG BỊ CHE KHUẤT) -->
+                <div class="d-flex p-1 bg-white rounded-3 mb-3 border shadow-sm" style="position: sticky; top: 75px; z-index: 1020;">
+                    <button type="button" class="btn btn-sm flex-fill fw-bold rounded-2 btn-dark text-white active" id="tabBtnCart" onclick="switchRightPanel('cart')" style="transition: all 0.2s;">
+                        <i class="fas fa-bag-shopping text-danger me-1"></i> Giỏ Hàng (<span id="cartCountBadgeTab">0</span>)
+                    </button>
+                    <button type="button" class="btn btn-sm flex-fill fw-bold rounded-2 text-muted" id="tabBtnAi" onclick="switchRightPanel('ai')" style="transition: all 0.2s;">
+                        <i class="fas fa-robot text-primary me-1"></i> Trợ Lý AI
+                    </button>
+                </div>
+
+                <!-- KHỐI 1: GIỎ HÀNG -->
+                <div class="cart-panel" id="cartPanelWrap">
                     <div class="cart-header">
                         <span><i class="fas fa-bag-shopping text-danger me-2"></i> Giỏ Hàng Của Bạn</span>
                         <span id="cartCountBadge" class="status-badge badge-neutral">0 món</span>
+                    </div>
+
+                    <!-- Gợi ý tương tác trợ lý AI ngay trong giỏ hàng -->
+                    <div class="p-2 mb-2 rounded-2 bg-light border d-flex justify-content-between align-items-center" style="font-size: 0.8rem;">
+                        <span class="text-muted"><i class="fas fa-sparkles text-primary me-1"></i> Chưa biết chọn món gì?</span>
+                        <button type="button" class="btn btn-sm btn-link p-0 text-primary fw-bold text-decoration-none" onclick="switchRightPanel('ai')">
+                            Hỏi Trợ lý AI &rarr;
+                        </button>
                     </div>
 
                     <div id="cartItemsList" style="max-height: 180px; overflow-y: auto; margin-bottom: 14px;">
@@ -1013,17 +1035,20 @@
                     </button>
                 </div>
 
-                <!-- CHATBOT TƯ VẤN & ĐẶT MÓN THÔNG MINH -->
-                <div class="bot-card mt-3">
+                <!-- KHỐI 2: CHATBOT TƯ VẤN & ĐẶT MÓN THÔNG MINH -->
+                <div class="bot-card mt-3" id="botCardWrap">
                     <div class="bot-header">
                         <div class="bot-avatar"><i class="fas fa-robot"></i></div>
-                        <div>
+                        <div class="flex-grow-1">
                             <div class="fw-bold text-dark small">Trợ Lý AI Tư Vấn Ẩm Thực</div>
                             <small class="text-muted" style="font-size: 0.72rem;">Hỏi thực đơn hoặc đặt món tự động</small>
                         </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 small d-md-none" onclick="switchRightPanel('cart')">
+                            <i class="fas fa-bag-shopping me-1"></i> Giỏ hàng
+                        </button>
                     </div>
 
-                    <div class="chat-logs" id="chatLogs" style="max-height: 180px;">
+                    <div class="chat-logs" id="chatLogs" style="max-height: 220px;">
                         <div class="msg-bubble msg-bot">
                             👋 Chào bạn! Bạn có thể gõ <b>menu</b> để xem các món, hoặc nhắn: <i>Gà rán về Cầu Giấy qua Vnpay</i> để tôi lên đơn ngay!
                         </div>
@@ -1233,6 +1258,16 @@
         </div>
     </div>
 
+    <!-- NÚT NỔI TRỢ LÝ AI (KHÔNG BAO GIỜ BỊ CHE KHUẤT) -->
+    <div style="position: fixed; bottom: 24px; right: 24px; z-index: 1055;" class="no-print">
+        <button type="button" class="btn btn-dark shadow-lg rounded-pill px-3 py-2 d-flex align-items-center gap-2 border border-2 border-white" onclick="openFloatingAiChat()" title="Mở Trợ Lý AI" style="box-shadow: 0 8px 24px rgba(0,0,0,0.28);">
+            <span class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 28px; font-size: 0.85rem;">
+                <i class="fas fa-robot"></i>
+            </span>
+            <span class="fw-bold small">Trợ Lý AI</span>
+        </button>
+    </div>
+
     <!-- FLOATING TOASTS -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;" id="shopToastContainer"></div>
 
@@ -1301,6 +1336,8 @@
                 listEl.appendChild(noticeEl);
                 noticeEl.style.display = 'block';
                 badgeEl.innerText = '0 món';
+                const tabBadge = document.getElementById('cartCountBadgeTab');
+                if (tabBadge) tabBadge.innerText = '0';
                 subTotalEl.innerText = '0 đ';
                 finalTotalEl.innerText = formatMoney(shippingFee);
                 return;
@@ -1332,6 +1369,8 @@
             });
 
             badgeEl.innerText = `${totalCount} món`;
+            const tabBadge = document.getElementById('cartCountBadgeTab');
+            if (tabBadge) tabBadge.innerText = String(totalCount);
             subTotalEl.innerText = formatMoney(subTotal);
             finalTotalEl.innerText = formatMoney(subTotal + shippingFee);
         }
@@ -1495,11 +1534,72 @@
             }
         }
 
+        function switchRightPanel(tab) {
+            const tabCart = document.getElementById('tabBtnCart');
+            const tabAi = document.getElementById('tabBtnAi');
+            const cartWrap = document.getElementById('cartPanelWrap');
+            const botWrap = document.getElementById('botCardWrap');
+
+            if (tab === 'ai') {
+                if (tabCart) { 
+                    tabCart.classList.remove('btn-dark', 'text-white', 'active'); 
+                    tabCart.classList.add('text-muted'); 
+                }
+                if (tabAi) { 
+                    tabAi.classList.add('btn-primary', 'text-white', 'active'); 
+                    tabAi.classList.remove('text-muted'); 
+                }
+                if (cartWrap) { cartWrap.style.display = 'none'; }
+                if (botWrap) { 
+                    botWrap.style.display = 'flex'; 
+                    botWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    setTimeout(() => document.getElementById('botInput')?.focus(), 250);
+                }
+            } else {
+                if (tabAi) { 
+                    tabAi.classList.remove('btn-primary', 'text-white', 'active'); 
+                    tabAi.classList.add('text-muted'); 
+                }
+                if (tabCart) { 
+                    tabCart.classList.add('btn-dark', 'text-white', 'active'); 
+                    tabCart.classList.remove('text-muted'); 
+                }
+                if (cartWrap) { 
+                    cartWrap.style.display = 'block'; 
+                    cartWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                if (window.innerWidth < 992) {
+                    if (botWrap) botWrap.style.display = 'none';
+                } else {
+                    if (botWrap) botWrap.style.display = 'flex';
+                }
+            }
+        }
+
+        function openFloatingAiChat() {
+            switchRightPanel('ai');
+            const botWrap = document.getElementById('botCardWrap') || document.getElementById('shopSidebarRight');
+            if (botWrap) {
+                botWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            setTimeout(() => {
+                document.getElementById('botInput')?.focus();
+            }, 300);
+        }
+
         function sendComplaint() {
             const name = document.getElementById('fbName').value.trim();
             const phone = document.getElementById('fbPhone').value.trim();
             const content = document.getElementById('fbContent').value.trim();
             if (!content) return showShopToast('Vui lòng nhập nội dung phản hồi!', 'warning');
+
+            const modalEl = document.getElementById('feedbackModal');
+            const submitBtn = modalEl ? modalEl.querySelector('.btn-brand-primary') : null;
+            const originalText = submitBtn ? submitBtn.innerHTML : '';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi mail...';
+            }
 
             fetch('/Shop/SendComplaint', {
                 method: 'POST',
@@ -1512,7 +1612,13 @@
                 bootstrap.Modal.getInstance(document.getElementById('feedbackModal'))?.hide();
                 document.getElementById('fbContent').value = '';
             })
-            .catch(() => showShopToast('Lỗi khi gửi phản hồi!', 'error'));
+            .catch(() => showShopToast('Lỗi khi gửi phản hồi!', 'error'))
+            .finally(() => {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            });
         }
     </script>
 </body>

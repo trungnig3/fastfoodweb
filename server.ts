@@ -3,8 +3,18 @@ import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import ejs from 'ejs';
+import nodemailer from 'nodemailer';
 import { db, User } from './src/db.js';
 import { VnPayLibrary, formatVnPayDate } from './src/vnpay.js';
+
+// Cấu hình gửi mail thông báo khiếu nại qua Gmail
+const complaintTransporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'vuductrung240305@gmail.com',
+    pass: 'kfysxopqdwpfangr'
+  }
+});
 
 declare module 'express-session' {
   interface SessionData {
@@ -529,14 +539,59 @@ app.post('/Shop/ChatBot', (req, res) => {
   return res.json({ reply });
 });
 
-app.post('/Shop/SendComplaint', (req, res) => {
+app.post('/Shop/SendComplaint', async (req, res) => {
   try {
     const { CustomerName, Phone, Content } = req.body;
     db.addComplaint({
-      CustomerName,
-      Phone,
-      Content
+      CustomerName: CustomerName || 'Khách vãng lai',
+      Phone: Phone || 'Chưa cung cấp',
+      Content: Content || ''
     });
+
+    // Tự động gửi email khiếu nại về hòm thư người quản lý
+    try {
+      await complaintTransporter.sendMail({
+        from: '"FastFood Express" <vuductrung240305@gmail.com>',
+        to: 'vuductrung240305@gmail.com',
+        subject: `[FastFood POS] Khiếu Nại / Góp Ý Mới từ: ${CustomerName || 'Khách hàng'}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #ffffff;">
+            <div style="background: #e11d48; color: #ffffff; padding: 18px 24px;">
+              <h2 style="margin: 0; font-size: 18px;">🔔 THÔNG BÁO KHIẾU NẠI & GÓP Ý MỚI</h2>
+              <div style="font-size: 13px; opacity: 0.9; margin-top: 4px;">Hệ thống Cửa Hàng FastFood Express & POS</div>
+            </div>
+            <div style="padding: 24px; color: #1e293b; line-height: 1.6;">
+              <p style="margin-top: 0;">Xin chào Quản trị viên, bạn vừa nhận được một phản ánh mới từ khách hàng qua website bán hàng:</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; font-weight: bold; width: 140px; color: #64748b;">Họ và tên:</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #0f172a;">${CustomerName || 'Khách vãng lai'}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; font-weight: bold; color: #64748b;">Số điện thoại:</td>
+                  <td style="padding: 10px 0; font-weight: bold; color: #e11d48; font-size: 15px;">${Phone || 'Chưa cung cấp'}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; font-weight: bold; color: #64748b;">Thời gian gửi:</td>
+                  <td style="padding: 10px 0; color: #334155;">${new Date().toLocaleString('vi-VN')}</td>
+                </tr>
+              </table>
+              <div style="background: #f8fafc; border-left: 4px solid #e11d48; padding: 16px; border-radius: 6px; margin-top: 14px;">
+                <div style="font-weight: bold; color: #0f172a; margin-bottom: 6px; font-size: 14px;">Nội dung phản ánh:</div>
+                <div style="white-space: pre-wrap; font-size: 14px; color: #334155; line-height: 1.5;">${Content || 'Không có nội dung'}</div>
+              </div>
+              <p style="margin-top: 22px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                Email này được gửi tự động từ hệ thống FastFood POS. Vui lòng liên hệ lại khách hàng để giải quyết khiếu nại sớm nhất.
+              </p>
+            </div>
+          </div>
+        `
+      });
+      console.log('✅ Đã gửi email thông báo khiếu nại thành công đến vuductrung240305@gmail.com');
+    } catch (mailErr: any) {
+      console.error('⚠️ Không thể gửi email khiếu nại:', mailErr?.message || mailErr);
+    }
+
     return res.json({
       success: true,
       message: 'Đã gửi khiếu nại thành công! Chủ quán sẽ liên hệ lại với bạn sớm nhất.'
@@ -1243,7 +1298,20 @@ app.get('/Cashier/OrderDetails/:id', requirePos, async (req, res) => {
 });
 
 app.post(['/Admin/UpdateOrderStatus', '/Cashier/UpdateOrderStatus'], (req, res) => {
-  if (!req.session.user) return res.status(401).json({ success: false, message: 'Chưa đăng nhập!' });
+  const isAjax = Boolean(
+    req.xhr ||
+    req.headers['x-requested-with'] === 'XMLHttpRequest' ||
+    (req.headers.accept && req.headers.accept.includes('application/json')) ||
+    (req.headers['content-type'] && req.headers['content-type'].includes('application/json')) ||
+    (req.body && req.body.ajax) ||
+    (req.headers.accept && !req.headers.accept.includes('text/html'))
+  );
+
+  if (!req.session.user) {
+    if (isAjax) return res.status(401).json({ success: false, message: 'Chưa đăng nhập!' });
+    return res.redirect('/Account/Login');
+  }
+
   const id = parseInt(req.body.orderId || req.body.id, 10);
   const status = req.body.status;
   const order = db.orders.find(o => o.OrderId === id);
@@ -1276,8 +1344,14 @@ app.post(['/Admin/UpdateOrderStatus', '/Cashier/UpdateOrderStatus'], (req, res) 
       order.ShippingStatus = status;
     }
 
-    if (req.headers.accept && req.headers.accept.includes('application/json')) {
-      return res.json({ success: true, message: 'Đã cập nhật trạng thái đơn hàng!' });
+    if (isAjax) {
+      return res.json({ 
+        success: true, 
+        message: 'Đã cập nhật trạng thái đơn hàng #' + id + ' thành công!',
+        orderId: id,
+        orderStatus: order.OrderStatus,
+        shippingStatus: order.ShippingStatus
+      });
     }
     const redirectUrl = req.path.toLowerCase().startsWith('/cashier') 
       ? `/Cashier/OrderDetails/${id}` 
@@ -1285,8 +1359,8 @@ app.post(['/Admin/UpdateOrderStatus', '/Cashier/UpdateOrderStatus'], (req, res) 
     return res.redirect(redirectUrl);
   }
 
-  if (req.headers.accept && req.headers.accept.includes('application/json')) {
-    return res.json({ success: false, message: 'Không tìm thấy đơn hàng!' });
+  if (isAjax) {
+    return res.json({ success: false, message: 'Không tìm thấy đơn hàng #' + id });
   }
   return res.redirect('/Admin/Orders');
 });
