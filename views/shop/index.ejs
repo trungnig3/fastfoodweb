@@ -743,6 +743,13 @@
             </a>
 
             <div class="d-flex align-items-center gap-2">
+                <button type="button" class="nav-btn-link text-warning fw-semibold border border-warning-subtle" onclick="openPointsModal()">
+                    <i class="fas fa-coins text-warning"></i>
+                    <span>Tra Cứu Điểm</span>
+                    <% if (typeof customerPoints !== 'undefined' && customerPoints > 0) { %>
+                        <span class="badge bg-danger ms-1" title="Hạng: <%= customerTier %>"><%= customerPoints %>đ</span>
+                    <% } %>
+                </button>
                 <button type="button" class="nav-btn-link text-primary fw-semibold" onclick="openFloatingAiChat()">
                     <i class="fas fa-robot text-primary"></i>
                     <span>Trợ Lý AI</span>
@@ -1003,10 +1010,43 @@
                     </div>
 
                     <div class="mb-2">
-                        <label class="form-label small fw-bold text-dark text-uppercase mb-1" style="font-size: 0.75rem;">
-                            Số điện thoại nhận hàng <span class="text-danger">* (Bắt buộc)</span>:
-                        </label>
-                        <input type="tel" class="form-control form-control-custom w-100 py-1" id="custPhone" placeholder="09xxxxxxxx (Bắt buộc để liên hệ giao hàng)" value="<%= (typeof user !== 'undefined' && user && user.PhoneNumber) ? user.PhoneNumber : '' %>" required />
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-dark text-uppercase mb-0" style="font-size: 0.75rem;">
+                                Số điện thoại nhận hàng <span class="text-danger">* (Bắt buộc)</span>:
+                            </label>
+                            <button type="button" class="btn btn-sm btn-link p-0 text-warning text-decoration-none fw-bold" style="font-size: 0.75rem;" onclick="checkPointsFromCart()">
+                                <i class="fas fa-coins me-1"></i>Kiểm tra điểm
+                            </button>
+                        </div>
+                        <input type="tel" class="form-control form-control-custom w-100 py-1" id="custPhone" placeholder="09xxxxxxxx (Bắt buộc để liên hệ & tích điểm)" value="<%= (typeof user !== 'undefined' && user && user.PhoneNumber) ? user.PhoneNumber : '' %>" onblur="handlePhoneBlur()" oninput="handlePhoneInput()" required />
+                    </div>
+
+                    <!-- KHỐI DÙNG ĐIỂM TÍCH LŨY (LOYALTY REWARD POINTS) -->
+                    <div id="loyaltyCartBox" class="p-2 mb-2 rounded-2 border border-warning-subtle d-none" style="background: #FFFBEB;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="small fw-bold text-dark"><i class="fas fa-coins text-warning me-1"></i> Khách hàng: <span id="loyaltyCustomerName" class="text-primary fw-bold"></span></span>
+                            <span class="badge bg-danger small" id="loyaltyCustomerTier">Đồng</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center small text-muted mb-2">
+                            <span>Điểm khả dụng: <b class="text-danger" id="loyaltyCustomerPoints">0</b> điểm</span>
+                            <span>Quy đổi: <b class="text-success" id="loyaltyCustomerValue">0 đ</b></span>
+                        </div>
+                        <div class="form-check form-switch mb-1">
+                            <input class="form-check-input" type="checkbox" id="chkUseLoyaltyPoints" onchange="toggleUsePointsCart()">
+                            <label class="form-check-label small fw-bold text-dark" for="chkUseLoyaltyPoints">Sử dụng điểm giảm giá đơn này</label>
+                        </div>
+                        <div id="loyaltyPointsInputWrap" class="d-none mt-2">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text bg-white small text-muted">Dùng</span>
+                                <input type="number" id="inputPointsToUse" class="form-control form-control-sm text-center fw-bold text-danger" min="1" value="0" oninput="onPointsAmountChange()">
+                                <span class="input-group-text bg-white small text-muted">điểm</span>
+                                <button type="button" class="btn btn-sm btn-dark" onclick="useMaxPointsCart()">Tối đa</button>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                                <span class="small text-muted" style="font-size: 0.72rem;">* 1 điểm = 1.000 đ giảm giá</span>
+                                <span class="small text-danger fw-bold" id="loyaltyDiscountPreviewText">-0 đ</span>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mb-2">
@@ -1025,9 +1065,20 @@
                         </select>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top">
-                        <span class="fw-bold text-dark">TỔNG THANH TOÁN:</span>
-                        <span class="fs-4 fw-bold tabular-nums text-danger" id="finalTotalText">0 đ</span>
+                    <!-- CHI TIẾT THANH TOÁN (TẠM TÍNH, SHIP, GIẢM TRỪ ĐIỂM, TỔNG) -->
+                    <div class="pt-2 border-top">
+                        <div class="d-flex justify-content-between align-items-center mb-1 small text-muted" id="rowShipFee" style="display: none;">
+                            <span>Phí vận chuyển:</span>
+                            <span class="tabular-nums fw-semibold" id="cartShipFeeText">0 đ</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-1 small text-danger" id="rowDiscountPoints" style="display: none;">
+                            <span><i class="fas fa-tag me-1"></i> Giảm trừ điểm tích lũy:</span>
+                            <span class="tabular-nums fw-bold" id="cartDiscountPointsText">-0 đ</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 pt-1">
+                            <span class="fw-bold text-dark">TỔNG THANH TOÁN:</span>
+                            <span class="fs-4 fw-bold tabular-nums text-danger" id="finalTotalText">0 đ</span>
+                        </div>
                     </div>
 
                     <button class="btn-submit-order" id="btnSubmitOrder" onclick="checkoutOrder()">
@@ -1153,7 +1204,7 @@
                             <li><a href="javascript:void(0)"><i class="fas fa-truck text-muted"></i> Chính Sách Giao Hàng</a></li>
                             <li><a href="javascript:void(0)"><i class="fas fa-rotate text-muted"></i> Đổi Trả & Bồi Hoàn</a></li>
                             <li><a href="javascript:void(0)"><i class="fas fa-user-shield text-muted"></i> Bảo Mật Thông Tin</a></li>
-                            <li><a href="javascript:void(0)"><i class="fas fa-award text-muted"></i> Tích Điểm Thành Viên</a></li>
+                            <li><a href="javascript:void(0)" onclick="openPointsModal()"><i class="fas fa-award text-warning"></i> Tra Cứu Điểm & Thành Viên</a></li>
                         </ul>
                     </div>
 
@@ -1193,6 +1244,113 @@
             </div>
         </div>
     </footer>
+
+    <!-- MODAL TRA CỨU ĐIỂM THƯỞNG & HẠNG THÀNH VIÊN -->
+    <div class="modal fade" id="pointsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 580px;">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom py-3" style="background: linear-gradient(135deg, #1E293B, #0F172A); color: #fff;">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-warning text-dark" style="width: 38px; height: 38px;">
+                            <i class="fas fa-coins fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="modal-title fw-bold text-white mb-0">Tra Cứu Điểm Thưởng & Hạng Thành Viên</h6>
+                            <small class="text-white-50" style="font-size: 0.75rem;">10.000 đ = 1 điểm · 1 điểm = 1.000 đ chiết khấu trực tiếp</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Ô nhập số điện thoại -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-1">Nhập Số Điện Thoại Thành Viên:</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="fas fa-phone"></i></span>
+                            <input type="tel" id="lookupPhoneInput" class="form-control form-control-custom" placeholder="Ví dụ: 0987654321..." onkeypress="if(event.key === 'Enter') queryPointsFromModal()" />
+                            <button type="button" class="btn btn-dark fw-bold px-3" onclick="queryPointsFromModal()">
+                                <i class="fas fa-search me-1"></i> Tra Cứu
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Trạng thái đang tải / lỗi -->
+                    <div id="pointsLoadingState" class="text-center py-4 d-none">
+                        <i class="fas fa-spinner fa-spin fa-2x text-warning mb-2"></i>
+                        <div class="small text-muted">Đang tra cứu dữ liệu thành viên...</div>
+                    </div>
+                    <div id="pointsErrorAlert" class="alert alert-warning py-2 px-3 small rounded-3 d-none mb-3"></div>
+
+                    <!-- Khối thông tin điểm & hạng thành viên khi tìm thấy -->
+                    <div id="pointsResultCard" class="d-none">
+                        <div class="p-3 rounded-3 mb-3 text-white position-relative overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #E11D48, #BE123C);">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <div class="text-white-50 small text-uppercase fw-semibold" style="letter-spacing: 0.05em;">Thẻ Thành Viên FastFood</div>
+                                    <h5 class="fw-bold mb-0 text-white" id="resCustName">--</h5>
+                                    <small class="text-white-50" id="resCustPhone">--</small>
+                                </div>
+                                <span class="badge bg-white text-danger fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm" id="resCustTierBadge">
+                                    <i class="fas fa-crown text-warning me-1"></i> <span id="resCustTier">Đồng</span>
+                                </span>
+                            </div>
+                            <div class="row g-2 mt-2 pt-2 border-top border-white border-opacity-25 align-items-center">
+                                <div class="col-6">
+                                    <div class="text-white-50 small">Điểm tích lũy hiện có:</div>
+                                    <div class="fs-3 fw-bold tabular-nums text-warning"><span id="resCustPoints">0</span> <span class="fs-6 fw-normal text-white">điểm</span></div>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <div class="text-white-50 small">Giá trị quy đổi giảm giá:</div>
+                                    <div class="fs-4 fw-bold tabular-nums text-white" id="resCustValue">0 đ</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Thanh thăng hạng thành viên -->
+                        <div class="p-3 rounded-3 bg-light border mb-3">
+                            <div class="d-flex justify-content-between align-items-center small mb-1">
+                                <span class="fw-bold text-dark"><i class="fas fa-chart-line text-primary me-1"></i> Tiến trình thăng hạng:</span>
+                                <span class="text-muted" id="resNextTierDesc">Cần thêm điểm để lên hạng tiếp theo</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" id="resTierProgressBar" style="width: 35%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted mt-1" style="font-size: 0.72rem;">
+                                <span>Đồng (0)</span>
+                                <span>Bạc (50)</span>
+                                <span>Vàng (150)</span>
+                                <span>Kim Cương (300+)</span>
+                            </div>
+                        </div>
+
+                        <!-- Lịch sử giao dịch điểm -->
+                        <div>
+                            <div class="fw-bold text-dark small mb-2"><i class="fas fa-clock-rotate-left text-danger me-1"></i> Lịch Sử Giao Dịch Điểm:</div>
+                            <div id="resPointHistoryList" class="border rounded-2 p-2 bg-white" style="max-height: 160px; overflow-y: auto;">
+                                <!-- Rendered dynamically -->
+                            </div>
+                        </div>
+
+                        <div class="mt-3 pt-3 border-top d-flex gap-2">
+                            <button type="button" class="btn btn-brand-primary flex-fill fw-bold py-2 justify-content-center" onclick="applyCustomerToCart()">
+                                <i class="fas fa-bag-shopping me-1"></i> Áp Dụng Dùng Điểm Cho Giỏ Hàng
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Khối hướng dẫn chính sách tích điểm -->
+                    <div id="pointsPolicyBox" class="p-3 rounded-3 bg-light border mt-2">
+                        <div class="fw-bold text-dark small mb-2"><i class="fas fa-circle-info text-primary me-1"></i> Quyền Lợi Thành Viên:</div>
+                        <ul class="small text-muted mb-0 ps-3" style="line-height: 1.6;">
+                            <li><b>Tích điểm tự động:</b> Cứ mỗi <b>10.000 đ</b> đơn hàng thanh toán thành công, bạn nhận ngay <b>1 điểm</b>.</li>
+                            <li><b>Tiêu điểm dễ dàng:</b> <b>1 điểm = 1.000 đ</b> giảm giá trực tiếp vào hóa đơn tiếp theo (không giới hạn số điểm).</li>
+                            <li><b>Hạng thành viên:</b> Tích lũy điểm để nâng hạng <b>Bạc (50đ), Vàng (150đ), Kim Cương (300đ)</b> với nhiều quà tặng đặc quyền.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL GỬI KHIẾU NẠI -->
     <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
@@ -1244,6 +1402,18 @@
                             <span class="text-muted">Tài xế giao hàng:</span>
                             <span class="fw-semibold text-dark" id="shopSuccessShipper">--</span>
                         </div>
+                        <div class="d-flex justify-content-between mb-1" id="shopSuccessPointsUsedRow" style="display: none;">
+                            <span class="text-muted">Điểm đã sử dụng:</span>
+                            <span class="fw-bold text-danger" id="shopSuccessPointsUsed">-0 điểm</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1" id="shopSuccessPointsEarnedRow" style="display: none;">
+                            <span class="text-muted">Điểm tích lũy thêm:</span>
+                            <span class="fw-bold text-success" id="shopSuccessPointsEarned">+0 điểm</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1" id="shopSuccessPointsRemainingRow" style="display: none;">
+                            <span class="text-muted">Số dư điểm hiện có:</span>
+                            <span class="fw-bold text-warning" id="shopSuccessPointsRemaining">0 điểm</span>
+                        </div>
                         <div class="d-flex justify-content-between pt-1 border-top">
                             <span class="text-muted">Thời gian dự kiến:</span>
                             <span class="fw-bold text-success">Khoảng 20 - 30 phút</span>
@@ -1276,9 +1446,269 @@
     <script>
         let cart = [];
         let shippingFee = 0;
+        let currentCustomer = null;
+        let pointsDiscountAmount = 0;
+        let pointsToUse = 0;
+        let isUsingPoints = false;
+        let phoneCheckTimeout = null;
 
         function formatMoney(amount) {
             return Number(amount).toLocaleString('vi-VN') + ' đ';
+        }
+
+        // ==================== TRA CỨU & DÙNG ĐIỂM THÀNH VIÊN ====================
+        function openPointsModal(prefillPhone) {
+            const phone = prefillPhone || document.getElementById('custPhone')?.value.trim() || '<%= customerPhone %>';
+            const input = document.getElementById('lookupPhoneInput');
+            if (input && phone) {
+                input.value = phone;
+            }
+            const modalEl = document.getElementById('pointsModal');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+                if (input && input.value.trim()) {
+                    queryPointsFromModal();
+                }
+            }
+        }
+
+        function queryPointsFromModal() {
+            const phone = document.getElementById('lookupPhoneInput')?.value.trim() || '';
+            const loading = document.getElementById('pointsLoadingState');
+            const alertBox = document.getElementById('pointsErrorAlert');
+            const resultCard = document.getElementById('pointsResultCard');
+            const policyBox = document.getElementById('pointsPolicyBox');
+
+            if (!phone) {
+                alertBox.textContent = 'Vui lòng nhập số điện thoại thành viên cần tra cứu!';
+                alertBox.classList.remove('d-none');
+                resultCard.classList.add('d-none');
+                return;
+            }
+
+            loading.classList.remove('d-none');
+            alertBox.classList.add('d-none');
+            resultCard.classList.add('d-none');
+            policyBox.classList.add('d-none');
+
+            fetch('/Shop/GetCustomerPoints?phone=' + encodeURIComponent(phone))
+                .then(r => r.json())
+                .then(data => {
+                    loading.classList.add('d-none');
+                    if (data.success && data.customer) {
+                        const cust = data.customer;
+                        currentCustomer = cust;
+                        document.getElementById('resCustName').textContent = cust.name || 'Khách hàng';
+                        document.getElementById('resCustPhone').textContent = cust.phone;
+                        document.getElementById('resCustTier').textContent = cust.tier || 'Đồng';
+                        document.getElementById('resCustPoints').textContent = cust.points || 0;
+                        document.getElementById('resCustValue').textContent = formatMoney(cust.discountValue || (cust.points * 1000));
+
+                        // Tier badge styling
+                        const tierBadge = document.getElementById('resCustTierBadge');
+                        if (tierBadge) {
+                            if (cust.tier === 'Kim Cương') tierBadge.className = 'badge bg-info text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
+                            else if (cust.tier === 'Vàng') tierBadge.className = 'badge bg-warning text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
+                            else if (cust.tier === 'Bạc') tierBadge.className = 'badge bg-secondary text-white fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
+                            else tierBadge.className = 'badge bg-light text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
+                        }
+
+                        // Next tier calculation
+                        const p = cust.points || 0;
+                        let nextDesc = '';
+                        let progress = 0;
+                        if (p < 50) {
+                            nextDesc = 'Cần thêm ' + (50 - p) + ' điểm để lên Bạc (50đ)';
+                            progress = Math.min(100, Math.round((p / 50) * 100));
+                        } else if (p < 150) {
+                            nextDesc = 'Cần thêm ' + (150 - p) + ' điểm để lên Vàng (150đ)';
+                            progress = Math.min(100, Math.round(((p - 50) / 100) * 100));
+                        } else if (p < 300) {
+                            nextDesc = 'Cần thêm ' + (300 - p) + ' điểm để lên Kim Cương (300đ)';
+                            progress = Math.min(100, Math.round(((p - 150) / 150) * 100));
+                        } else {
+                            nextDesc = 'Bạn đang là thành viên VIP Kim Cương!';
+                            progress = 100;
+                        }
+                        document.getElementById('resNextTierDesc').textContent = nextDesc;
+                        document.getElementById('resTierProgressBar').style.width = progress + '%';
+
+                        // History list
+                        const histEl = document.getElementById('resPointHistoryList');
+                        if (data.history && data.history.length > 0) {
+                            histEl.innerHTML = `
+                                <table class="table table-sm table-borderless small mb-0">
+                                    <tbody>
+                                        ${data.history.map(h => `
+                                            <tr class="border-bottom border-light">
+                                                <td class="text-muted text-nowrap py-1" style="width: 140px;">${h.date}</td>
+                                                <td class="py-1">${h.description}</td>
+                                                <td class="text-end fw-bold py-1 ${h.points >= 0 ? 'text-success' : 'text-danger'}">
+                                                    ${h.points > 0 ? '+' : ''}${h.points} đ
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            `;
+                        } else {
+                            histEl.innerHTML = '<div class="text-muted small text-center py-2">Chưa có giao dịch tích điểm nào.</div>';
+                        }
+
+                        resultCard.classList.remove('d-none');
+                        updateCartLoyaltyUI(cust);
+                    } else {
+                        alertBox.textContent = data.message || 'Không tìm thấy dữ liệu thành viên cho số điện thoại này.';
+                        alertBox.classList.remove('d-none');
+                        policyBox.classList.remove('d-none');
+                    }
+                })
+                .catch(() => {
+                    loading.classList.add('d-none');
+                    alertBox.textContent = 'Không thể kết nối máy chủ để tra cứu điểm!';
+                    alertBox.classList.remove('d-none');
+                    policyBox.classList.remove('d-none');
+                });
+        }
+
+        function applyCustomerToCart() {
+            const phone = document.getElementById('resCustPhone')?.textContent || document.getElementById('lookupPhoneInput')?.value.trim();
+            if (phone) {
+                const phoneInput = document.getElementById('custPhone');
+                if (phoneInput) phoneInput.value = phone;
+            }
+            const modalEl = document.getElementById('pointsModal');
+            if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+
+            switchRightPanel('cart');
+            handlePhoneBlur();
+
+            setTimeout(() => {
+                const chk = document.getElementById('chkUseLoyaltyPoints');
+                if (chk && !chk.checked && currentCustomer && currentCustomer.points > 0) {
+                    chk.checked = true;
+                    toggleUsePointsCart();
+                }
+                showShopToast('Đã áp dụng thông tin thành viên vào giỏ hàng!', 'success');
+            }, 300);
+        }
+
+        function checkPointsFromCart() {
+            const phone = document.getElementById('custPhone')?.value.trim();
+            openPointsModal(phone);
+        }
+
+        function handlePhoneInput() {
+            clearTimeout(phoneCheckTimeout);
+            const val = (document.getElementById('custPhone')?.value || '').trim().replace(/[\s.-]/g, '');
+            if (val.length >= 10) {
+                phoneCheckTimeout = setTimeout(handlePhoneBlur, 500);
+            }
+        }
+
+        function handlePhoneBlur() {
+            const phone = (document.getElementById('custPhone')?.value || '').trim();
+            if (!phone || phone.length < 9) {
+                document.getElementById('loyaltyCartBox')?.classList.add('d-none');
+                isUsingPoints = false;
+                pointsDiscountAmount = 0;
+                pointsToUse = 0;
+                renderCart();
+                return;
+            }
+
+            fetch('/Shop/GetCustomerPoints?phone=' + encodeURIComponent(phone))
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.customer) {
+                        currentCustomer = data.customer;
+                        updateCartLoyaltyUI(data.customer);
+                    } else {
+                        currentCustomer = null;
+                        document.getElementById('loyaltyCartBox')?.classList.add('d-none');
+                        isUsingPoints = false;
+                        pointsDiscountAmount = 0;
+                        pointsToUse = 0;
+                        renderCart();
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function updateCartLoyaltyUI(cust) {
+            const box = document.getElementById('loyaltyCartBox');
+            if (!box || !cust) return;
+
+            document.getElementById('loyaltyCustomerName').textContent = cust.name;
+            document.getElementById('loyaltyCustomerTier').textContent = cust.tier;
+            document.getElementById('loyaltyCustomerPoints').textContent = cust.points;
+            document.getElementById('loyaltyCustomerValue').textContent = formatMoney(cust.points * 1000);
+
+            box.classList.remove('d-none');
+
+            if (cust.points <= 0) {
+                document.getElementById('loyaltyPointsInputWrap')?.classList.add('d-none');
+                const chk = document.getElementById('chkUseLoyaltyPoints');
+                if (chk) { chk.checked = false; chk.disabled = true; }
+                isUsingPoints = false;
+                pointsDiscountAmount = 0;
+                pointsToUse = 0;
+            } else {
+                const chk = document.getElementById('chkUseLoyaltyPoints');
+                if (chk) { chk.disabled = false; }
+            }
+            renderCart();
+        }
+
+        function toggleUsePointsCart() {
+            const chk = document.getElementById('chkUseLoyaltyPoints');
+            const wrap = document.getElementById('loyaltyPointsInputWrap');
+            isUsingPoints = Boolean(chk && chk.checked);
+
+            if (isUsingPoints) {
+                wrap?.classList.remove('d-none');
+                useMaxPointsCart();
+            } else {
+                wrap?.classList.add('d-none');
+                pointsDiscountAmount = 0;
+                pointsToUse = 0;
+                renderCart();
+            }
+        }
+
+        function useMaxPointsCart() {
+            if (!currentCustomer) return;
+            let subTotal = 0;
+            cart.forEach(i => subTotal += i.price * i.quantity);
+            const maxPointsCanUse = Math.min(currentCustomer.points || 0, Math.floor(subTotal / 1000));
+            pointsToUse = Math.max(0, maxPointsCanUse);
+            const input = document.getElementById('inputPointsToUse');
+            if (input) input.value = pointsToUse;
+            onPointsAmountChange();
+        }
+
+        function onPointsAmountChange() {
+            if (!isUsingPoints || !currentCustomer) return;
+            const input = document.getElementById('inputPointsToUse');
+            let val = parseInt(input?.value, 10);
+            if (isNaN(val) || val < 0) val = 0;
+
+            let subTotal = 0;
+            cart.forEach(i => subTotal += i.price * i.quantity);
+            const maxPointsCanUse = Math.min(currentCustomer.points || 0, Math.floor(subTotal / 1000));
+
+            if (val > maxPointsCanUse) {
+                val = maxPointsCanUse;
+                if (input) input.value = val;
+            }
+            pointsToUse = val;
+            pointsDiscountAmount = pointsToUse * 1000;
+
+            const preview = document.getElementById('loyaltyDiscountPreviewText');
+            if (preview) preview.textContent = '-' + formatMoney(pointsDiscountAmount);
+
+            renderCart();
         }
 
         function filterMenu(catId, btn) {
@@ -1330,6 +1760,10 @@
             const subTotalEl = document.getElementById('subTotalText');
             const finalTotalEl = document.getElementById('finalTotalText');
             const badgeEl = document.getElementById('cartCountBadge');
+            const rowDiscount = document.getElementById('rowDiscountPoints');
+            const rowShip = document.getElementById('rowShipFee');
+            const shipFeeEl = document.getElementById('cartShipFeeText');
+            const discTextEl = document.getElementById('cartDiscountPointsText');
 
             if (cart.length === 0) {
                 listEl.innerHTML = '';
@@ -1339,6 +1773,8 @@
                 const tabBadge = document.getElementById('cartCountBadgeTab');
                 if (tabBadge) tabBadge.innerText = '0';
                 subTotalEl.innerText = '0 đ';
+                if (rowDiscount) rowDiscount.style.display = 'none';
+                if (rowShip) rowShip.style.display = 'none';
                 finalTotalEl.innerText = formatMoney(shippingFee);
                 return;
             }
@@ -1368,11 +1804,43 @@
                 listEl.appendChild(row);
             });
 
+            // Xử lý giảm trừ điểm nếu kích hoạt
+            if (isUsingPoints && currentCustomer && currentCustomer.points > 0) {
+                const maxPoints = Math.min(currentCustomer.points, Math.floor(subTotal / 1000));
+                if (pointsToUse > maxPoints) {
+                    pointsToUse = maxPoints;
+                    const input = document.getElementById('inputPointsToUse');
+                    if (input) input.value = pointsToUse;
+                }
+                pointsDiscountAmount = pointsToUse * 1000;
+
+                if (pointsDiscountAmount > 0) {
+                    if (rowDiscount) rowDiscount.style.display = 'flex';
+                    if (discTextEl) discTextEl.innerText = '-' + formatMoney(pointsDiscountAmount);
+                } else {
+                    if (rowDiscount) rowDiscount.style.display = 'none';
+                }
+            } else {
+                pointsDiscountAmount = 0;
+                if (rowDiscount) rowDiscount.style.display = 'none';
+            }
+
+            if (rowShip) {
+                if (shippingFee > 0) {
+                    rowShip.style.display = 'flex';
+                    if (shipFeeEl) shipFeeEl.innerText = formatMoney(shippingFee);
+                } else {
+                    rowShip.style.display = 'none';
+                }
+            }
+
+            const finalTotal = Math.max(0, subTotal - pointsDiscountAmount) + shippingFee;
+
             badgeEl.innerText = `${totalCount} món`;
             const tabBadge = document.getElementById('cartCountBadgeTab');
             if (tabBadge) tabBadge.innerText = String(totalCount);
             subTotalEl.innerText = formatMoney(subTotal);
-            finalTotalEl.innerText = formatMoney(subTotal + shippingFee);
+            finalTotalEl.innerText = formatMoney(finalTotal);
         }
 
         async function calcDeliveryFee() {
@@ -1465,7 +1933,9 @@
                     Address: address,
                     PaymentMethod: method,
                     ShippingFee: shippingFee,
-                    CustomerPhone: phone
+                    CustomerPhone: phone,
+                    UsePoints: isUsingPoints,
+                    PointsToUse: pointsToUse
                 })
             })
             .then(r => r.json())
@@ -1483,13 +1953,49 @@
                             document.getElementById('shopSuccessShipperRow').style.display = 'none';
                         }
 
+                        // Chi tiết điểm thưởng tích lũy & tiêu điểm
+                        const pointsUsedRow = document.getElementById('shopSuccessPointsUsedRow');
+                        if (pointsUsedRow) {
+                            if (data.pointsUsed > 0) {
+                                document.getElementById('shopSuccessPointsUsed').textContent = '-' + data.pointsUsed + ' điểm (-' + formatMoney(data.discountAmount || (data.pointsUsed * 1000)) + ')';
+                                pointsUsedRow.style.display = 'flex';
+                            } else {
+                                pointsUsedRow.style.display = 'none';
+                            }
+                        }
+
+                        const pointsEarnedRow = document.getElementById('shopSuccessPointsEarnedRow');
+                        if (pointsEarnedRow) {
+                            if (data.pointsEarned > 0) {
+                                document.getElementById('shopSuccessPointsEarned').textContent = '+' + data.pointsEarned + ' điểm';
+                                pointsEarnedRow.style.display = 'flex';
+                            } else {
+                                pointsEarnedRow.style.display = 'none';
+                            }
+                        }
+
+                        const pointsRemainRow = document.getElementById('shopSuccessPointsRemainingRow');
+                        if (pointsRemainRow) {
+                            if (data.remainingPoints !== undefined) {
+                                document.getElementById('shopSuccessPointsRemaining').textContent = data.remainingPoints + ' điểm';
+                                pointsRemainRow.style.display = 'flex';
+                            } else {
+                                pointsRemainRow.style.display = 'none';
+                            }
+                        }
+
                         var modal = new bootstrap.Modal(document.getElementById('shopOrderSuccessModal'));
                         modal.show();
 
                         cart = [];
+                        isUsingPoints = false;
+                        pointsDiscountAmount = 0;
+                        pointsToUse = 0;
+                        const chkPoints = document.getElementById('chkUseLoyaltyPoints');
+                        if (chkPoints) chkPoints.checked = false;
+                        document.getElementById('loyaltyPointsInputWrap')?.classList.add('d-none');
                         renderCart();
                         document.getElementById('deliveryAddress').value = '';
-                        document.getElementById('custPhone').value = '';
                         document.getElementById('deliveryFeeStatus').innerHTML = '';
                     }
                 } else {
@@ -1620,6 +2126,13 @@
                 }
             });
         }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            const phone = document.getElementById('custPhone')?.value.trim();
+            if (phone && phone.length >= 9) {
+                handlePhoneBlur();
+            }
+        });
     </script>
 </body>
 </html>

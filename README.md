@@ -4,6 +4,55 @@ Hệ thống bán đồ ăn nhanh đa nền tảng gồm Cửa hàng trực tuy�
 
 ---
 
+## 🏗️ CẤU TRÚC MÔ HÌNH MVC (MODEL - VIEW - CONTROLLER)
+
+Dự án được cấu trúc chuẩn theo mô hình kiến trúc **MVC**, cực kỳ quen thuộc với các lập trình viên sử dụng **Visual Studio / Visual Studio Code**:
+
+```text
+├── src/
+│   ├── models/                    # [M] MODEL: Định nghĩa dữ liệu & cơ sở dữ liệu
+│   │   ├── types.ts               # Interface TypeScript (User, Product, Order, Shift, v.v.)
+│   │   └── index.ts               # Kết nối và thao tác với Database Store
+│   │
+│   ├── controllers/               # [C] CONTROLLER: Xử lý nghiệp vụ & điều hướng
+│   │   ├── ShopController.ts      # Quản lý giao diện khách hàng, đặt món, giỏ hàng, khiếu nại
+│   │   ├── PosController.ts       # Nghiệp vụ quầy thu ngân POS, tính tiền, in biên lai, giao ca
+│   │   ├── AccountController.ts   # Xác thực tài khoản, đăng nhập, đăng ký, phân quyền
+│   │   ├── CashierController.ts   # Quản lý đơn ca trực, xem doanh thu ca, chấm công
+│   │   └── AdminController.ts     # Báo cáo doanh thu, quản lý thực đơn, kho hàng, nhân viên
+│   │
+│   ├── routes/                    # BỘ ĐỊNH TUYẾN URL đến từng Controller tương ứng
+│   │   ├── shopRoutes.ts          # Định tuyến cho Shop (/, /Shop/Checkout, /Shop/ChatBot, v.v.)
+│   │   ├── posRoutes.ts           # Định tuyến cho quầy POS (/Pos, /Pos/Checkout, v.v.)
+│   │   ├── accountRoutes.ts       # Định tuyến tài khoản (/Account/Login, /Account/Register)
+│   │   ├── cashierRoutes.ts       # Định tuyến thu ngân (/Cashier, /Cashier/Orders)
+│   │   └── adminRoutes.ts         # Định tuyến quản trị (/Admin, /Admin/Inventory, v.v.)
+│   │
+│   ├── services/                  # CÁC DỊCH VỤ TÍCH HỢP (SERVICES)
+│   │   ├── emailService.ts        # Gửi email khiếu nại khách hàng qua Gmail SMTP (Nodemailer)
+│   │   ├── vnpayService.ts        # Tạo link thanh toán online và kiểm tra hạn hủy đơn VNPay
+│   │   └── aiChatService.ts       # Trợ lý AI tư vấn thực đơn và lên đơn tự động
+│   │
+│   └── middlewares/               # MIDDLEWARES KIỂM SOÁT PHÂN QUYỀN & LAYOUT
+│       └── authMiddleware.ts      # requireAdmin, requireCashier, requirePos, renderAdmin/Cashier
+│
+├── views/                         # [V] VIEW: Giao diện người dùng (EJS Views)
+│   ├── shop/                      # View dành cho khách hàng đặt món trực tuyến
+│   ├── pos/                       # View màn hình cảm ứng bán hàng tại quầy POS & in bill
+│   ├── account/                   # View đăng nhập, đăng ký tài khoản khách hàng
+│   ├── cashier/                   # View thu ngân kiểm tra đơn và doanh thu trong ca
+│   ├── admin/                     # View quản trị hệ thống, báo cáo, biểu đồ doanh thu, kho
+│   └── shared/                    # Các thành phần giao diện dùng chung (header, layout)
+│
+├── wwwroot/                       # Tệp tĩnh: CSS, JavaScript, hình ảnh, icon
+├── .vscode/                       # Cấu hình Visual Studio / VS Code (Phím F5 để Debug ngay)
+│   ├── launch.json                # Cấu hình F5 Run & Debug trực tiếp
+│   └── tasks.json                 # Tác vụ Build & Dev tự động
+└── server.ts                      # Điểm khởi chạy ứng dụng Express MVC gọn gàng, tinh gọn
+```
+
+---
+
 ## 🌐 TÊN MIỀN WEB HOÀN TOÀN MIỄN PHÍ ĐANG HOẠT ĐỘNG (LIVE CLOUD)
 
 Ứng dụng hiện đã được triển khai sẵn trên máy chủ Cloud tốc độ cao (Google Cloud Run HTTPS) với tên miền hoàn toàn miễn phí, online 24/7:

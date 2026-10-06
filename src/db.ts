@@ -1,101 +1,17 @@
 // In-memory data store for FastFoodWeb
-export interface Role {
-  RoleId: number;
-  RoleName: string;
-}
-
-export interface User {
-  UserId: number;
-  Username: string;
-  PasswordHash: string;
-  FullName: string;
-  RoleId: number;
-  HourlyRate: number;
-  IsActive: boolean;
-  PhoneNumber?: string;
-}
-
-export interface Category {
-  CategoryId: number;
-  CategoryName: string;
-}
-
-export interface Product {
-  ProductId: number;
-  ProductName: string;
-  Description?: string;
-  Price: number;
-  ImageURL: string;
-  IsCombo: boolean;
-  IsActive: boolean;
-  CategoryId: number;
-  StockQuantity: number;
-}
-
-export interface Shift {
-  ShiftId: number;
-  UserId: number;
-  StartTime: Date;
-  EndTime: Date | null;
-  StartingCash: number;
-  ActualCash: number;
-  CashDifference: number;
-  TotalHours: number;
-  StandardHours: number;
-  OvertimeHours: number;
-  OvertimeBonus: number;
-  LatePenalty: number;
-  TotalSalary: number;
-}
-
-export interface Customer {
-  CustomerId: number;
-  Phone: string;
-  FullName: string;
-  TotalPoints: number;
-  MembershipTier: string;
-}
-
-export interface PointHistory {
-  HistoryId: number;
-  CustomerId: number;
-  Points: number;
-  Description: string;
-  CreatedAt: Date;
-}
-
-export interface OrderDetail {
-  DetailId: number;
-  OrderId: number;
-  ProductId: number;
-  Quantity: number;
-  UnitPrice: number;
-}
-
-export interface Order {
-  OrderId: number;
-  OrderCode: string;
-  CashierId: number;
-  CustomerId?: number;
-  OrderDate: Date;
-  OrderStatus: string; // 'Pending' | 'Hoàn tất' | 'Đã hủy'
-  PaymentMethod: string;
-  SubTotal: number;
-  TotalAmount: number;
-  ShippingAddress?: string;
-  ShipperName?: string;
-  ShipperPhone?: string;
-  ShippingStatus?: string;
-  OrderDetails?: OrderDetail[];
-}
-
-export interface Complaint {
-  ComplaintId: number;
-  CustomerName?: string;
-  Phone?: string;
-  Content: string;
-  CreatedAt: Date;
-}
+export * from './models/types.js';
+import {
+  Role,
+  User,
+  Category,
+  Product,
+  Shift,
+  Customer,
+  PointHistory,
+  OrderDetail,
+  Order,
+  Complaint
+} from './models/types.js';
 
 class Database {
   roles: Role[] = [
@@ -130,7 +46,8 @@ class Database {
       FullName: 'Nguyễn Văn Khách (KHÁCH HÀNG)',
       RoleId: 3,
       HourlyRate: 0,
-      IsActive: true
+      IsActive: true,
+      PhoneNumber: '0987654321'
     }
   ];
 
@@ -484,6 +401,19 @@ class Database {
     };
     this.pointHistories.push(h);
     return h;
+  }
+
+  getPointHistory(customerId: number): PointHistory[] {
+    return this.pointHistories
+      .filter(h => h.CustomerId === customerId)
+      .sort((a, b) => new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime());
+  }
+
+  calculateMembershipTier(points: number): string {
+    if (points >= 300) return 'Kim Cương';
+    if (points >= 150) return 'Vàng';
+    if (points >= 50) return 'Bạc';
+    return 'Đồng';
   }
 
   updateCustomer(id: number, data: Partial<Customer>): boolean {
