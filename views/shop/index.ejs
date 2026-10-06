@@ -1097,26 +1097,38 @@
                 </div>
 
                 <!-- KHỐI 2: CHATBOT TƯ VẤN & ĐẶT MÓN THÔNG MINH -->
-                <div class="bot-card mt-3" id="botCardWrap">
+                <div class="bot-card mt-3 shadow-sm border" id="botCardWrap">
                     <div class="bot-header">
-                        <div class="bot-avatar"><i class="fas fa-robot"></i></div>
+                        <div class="bot-avatar"><i class="fas fa-robot text-white"></i></div>
                         <div class="flex-grow-1">
-                            <div class="fw-bold text-dark small">Trợ Lý AI Tư Vấn Ẩm Thực</div>
-                            <small class="text-muted" style="font-size: 0.72rem;">Hỏi thực đơn hoặc đặt món tự động</small>
+                            <div class="fw-bold text-dark small d-flex align-items-center gap-1">
+                                <span>Trợ Lý AI FastFood</span>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-0" style="font-size: 0.65rem;">Gemini AI</span>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Tư vấn món ăn & đặt hàng tự động 24/7</small>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 small d-md-none" onclick="switchRightPanel('cart')">
                             <i class="fas fa-bag-shopping me-1"></i> Giỏ hàng
                         </button>
                     </div>
 
-                    <div class="chat-logs" id="chatLogs" style="max-height: 220px;">
+                    <div class="chat-logs" id="chatLogs" style="max-height: 250px; min-height: 180px; overflow-y: auto;">
                         <div class="msg-bubble msg-bot">
-                            👋 Chào bạn! Bạn có thể gõ <b>menu</b> để xem các món, hoặc nhắn: <i>Gà rán về Cầu Giấy qua Vnpay</i> để tôi lên đơn ngay!
+                            👋 Chào bạn! Tôi là <b>Trợ lý AI Ẩm Thực</b> của FastFood Express. Tôi có thể tư vấn món ăn ngon, tính toán calo hoặc <b>lên đơn tự động giao tận nơi</b> cho bạn! 🍔✨
                         </div>
                     </div>
 
-                    <div class="input-group">
-                        <input type="text" id="botInput" class="form-control form-control-custom border-end-0" placeholder="Nhắn tin cho AI..." onkeypress="if(event.key === 'Enter') sendBotMessage()">
+                    <!-- Gợi ý nhanh các câu hỏi cho AI -->
+                    <div class="px-2 py-1 bg-light border-top border-bottom d-flex gap-1 overflow-x-auto text-nowrap scrollbar-none" style="font-size: 0.75rem;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill bg-white" onclick="sendQuickPrompt('Menu hôm nay có những món gì?')">📜 Xem Menu</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill bg-white" onclick="sendQuickPrompt('Gợi ý món gà rán ngon nhất')">🍗 Gà Rán</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill bg-white" onclick="sendQuickPrompt('Các set Combo tiết kiệm')">🔥 Combo HOT</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill bg-white" onclick="sendQuickPrompt('2 gà rán về Cầu Giấy qua Vnpay')">⚡ Đặt mẫu qua AI</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 rounded-pill bg-white" onclick="sendQuickPrompt('Địa chỉ và giờ mở cửa quán')">⏰ Giờ mở cửa</button>
+                    </div>
+
+                    <div class="input-group p-1 bg-white">
+                        <input type="text" id="botInput" class="form-control form-control-custom border-end-0" placeholder="Hỏi món ngon hoặc nhắn đặt hàng..." onkeypress="if(event.key === 'Enter') sendBotMessage()">
                         <button class="btn btn-dark px-3 fw-bold" onclick="sendBotMessage()">
                             <i class="fas fa-paper-plane"></i>
                         </button>
@@ -2345,37 +2357,86 @@
             openTrackOrderModal(code);
         }
 
-        function sendBotMessage() {
+        function sendQuickPrompt(promptText) {
             const input = document.getElementById('botInput');
-            const msg = input ? input.value.trim() : '';
+            if (input) input.value = promptText;
+            sendBotMessage();
+        }
+
+        function formatBotMarkdown(text) {
+            if (!text) return '';
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // In đậm **text**
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // In nghiêng *text*
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Mã `code`
+            html = html.replace(/`(.*?)`/g, '<code class="bg-light px-1 rounded text-danger border">$1</code>');
+            // Xuống dòng
+            html = html.replace(/\n/g, '<br>');
+
+            // Khôi phục các thẻ link an toàn đã được server cung cấp nếu có
+            return html;
+        }
+
+        function sendBotMessage(overrideMsg) {
+            const input = document.getElementById('botInput');
+            const msg = (overrideMsg || (input ? input.value : '') || '').trim();
             if (!msg) return;
 
             const chatLogs = document.getElementById('chatLogs');
-            chatLogs.innerHTML += '<div class="msg-bubble msg-user">' + msg + '</div>';
-            input.value = '';
+            chatLogs.innerHTML += '<div class="msg-bubble msg-user">' + msg.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>';
+            if (input) input.value = '';
             chatLogs.scrollTop = chatLogs.scrollHeight;
 
             const tempId = 'bot-temp-' + Date.now();
-            chatLogs.innerHTML += '<div id="' + tempId + '" class="msg-bubble msg-bot text-muted"><i class="fas fa-spinner fa-spin me-1"></i> Đang suy nghĩ...</div>';
+            chatLogs.innerHTML += '<div id="' + tempId + '" class="msg-bubble msg-bot text-muted"><i class="fas fa-spinner fa-spin me-1 text-primary"></i> Trợ lý AI đang xử lý...</div>';
             chatLogs.scrollTop = chatLogs.scrollHeight;
 
             fetch('/Shop/ChatBot', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: msg })
+                body: JSON.stringify({ message: msg, Message: msg })
             })
             .then(function(r) { return r.json(); })
             .then(function(res) {
                 const tempEl = document.getElementById(tempId);
                 if (tempEl) tempEl.remove();
-                const replyHtml = (res.reply || '').replace(/\n/g, '<br>');
-                chatLogs.innerHTML += '<div class="msg-bubble msg-bot">🤖 ' + replyHtml + '</div>';
+
+                let replyContent = res.reply || 'Dạ tôi đã ghi nhận thông tin!';
+                let formatted = '';
+
+                // Nếu trong reply có thẻ html từ server (như nút thanh toán VNPAY)
+                if (replyContent.includes("<div") || replyContent.includes("<a")) {
+                    const parts = replyContent.split(/\n\n(?=<div)/);
+                    const textPart = parts[0] || '';
+                    const htmlPart = parts.slice(1).join('\n\n') || '';
+                    formatted = formatBotMarkdown(textPart) + (htmlPart ? '<div class="mt-2">' + htmlPart + '</div>' : '');
+                } else {
+                    formatted = formatBotMarkdown(replyContent);
+                }
+
+                // Nếu có mã đơn mới tạo từ AI, thêm nút bấm theo dõi nhanh
+                if (res.orderCode) {
+                    formatted += '<div class="mt-2 pt-2 border-top d-flex gap-2">' +
+                        '<button type="button" class="btn btn-sm btn-outline-danger py-1 px-2 rounded-2 fw-bold" onclick="openTrackOrderModal(\'' + res.orderCode + '\')">' +
+                        '<i class="fas fa-truck-fast me-1"></i> Theo dõi đơn ' + res.orderCode + '</button>' +
+                        '</div>';
+                }
+
+                chatLogs.innerHTML += '<div class="msg-bubble msg-bot shadow-sm"><span class="badge bg-primary me-1" style="font-size: 0.65rem;">AI</span> ' + formatted + '</div>';
                 chatLogs.scrollTop = chatLogs.scrollHeight;
             })
-            .catch(function() {
+            .catch(function(err) {
+                console.error('ChatBot UI Error:', err);
                 const tempEl = document.getElementById(tempId);
                 if (tempEl) tempEl.remove();
-                chatLogs.innerHTML += '<div class="msg-bubble msg-bot text-danger">Lỗi kết nối đến trợ lý AI.</div>';
+                chatLogs.innerHTML += '<div class="msg-bubble msg-bot text-danger"><i class="fas fa-triangle-exclamation me-1"></i> Lỗi kết nối đến máy chủ AI. Vui lòng thử lại!</div>';
+                chatLogs.scrollTop = chatLogs.scrollHeight;
             });
         }
 

@@ -10,7 +10,8 @@ import {
   PointHistory,
   OrderDetail,
   Order,
-  Complaint
+  Complaint,
+  Review
 } from './models/types.js';
 
 class Database {
@@ -177,6 +178,61 @@ class Database {
   orders: Order[] = [];
   orderDetails: OrderDetail[] = [];
   complaints: Complaint[] = [];
+  reviews: Review[] = [
+    {
+      ReviewId: 1,
+      CustomerName: 'Hoàng Anh Tuấn',
+      Phone: '0988776655',
+      Rating: 5,
+      Category: 'Chất lượng món ăn',
+      Content: 'Gà rán giòn cay ngon đỉnh chóp, da giòn rụm bên trong thịt mềm mọng nước không hề bị khô. Sẽ ủng hộ quán dài dài!',
+      Reply: 'FastFood Express cảm ơn bạn Tuấn rất nhiều ạ! Chúc bạn luôn có những bữa ăn thật ngon miệng cùng quán!',
+      Status: 'Đã phản hồi',
+      CreatedAt: new Date(Date.now() - 86400000 * 2)
+    },
+    {
+      ReviewId: 2,
+      CustomerName: 'Trần Thu Hà',
+      Phone: '0912345678',
+      Rating: 5,
+      Category: 'Tốc độ giao hàng',
+      Content: 'Shipper giao hàng siêu nhanh, chỉ 20 phút là nhận được đồ ăn rồi. Món burger bò và khoai tây vẫn còn bốc khói nóng hổi.',
+      Reply: 'Dạ cảm ơn chị Hà đã tin tưởng dịch vụ giao hàng nhanh 30 phút của quán ạ!',
+      Status: 'Đã phản hồi',
+      CreatedAt: new Date(Date.now() - 86400000 * 1.5)
+    },
+    {
+      ReviewId: 3,
+      CustomerName: 'Nguyễn Văn Minh',
+      Phone: '0903456789',
+      Rating: 4,
+      Category: 'Giá cả & Khuyến mãi',
+      Content: 'Combo 2 ăn no nê mà giá 90k rất hợp lý. Điểm tích lũy lần trước trừ thẳng vào tiền bill hôm nay cực kỳ tiện lợi!',
+      Status: 'Đã duyệt',
+      CreatedAt: new Date(Date.now() - 86400000 * 1)
+    },
+    {
+      ReviewId: 4,
+      CustomerName: 'Phạm Quỳnh Nga',
+      Phone: '0938889900',
+      Rating: 5,
+      Category: 'Thái độ phục vụ',
+      Content: 'Nhân viên tư vấn nhiệt tình, đóng gói hộp sạch sẽ và chu đáo. Đầy đủ tương ớt, tương cà và khăn giấy.',
+      Status: 'Đã duyệt',
+      CreatedAt: new Date(Date.now() - 3600000 * 8)
+    },
+    {
+      ReviewId: 5,
+      CustomerName: 'Lê Hoàng Long',
+      Phone: '0399113871',
+      Rating: 1,
+      Category: 'Tốc độ giao hàng',
+      Content: 'Hôm nay đặt vào giờ cao điểm mưa gió shipper giao trễ 15 phút, cần cải thiện tốc độ giao vào giờ cao điểm nhé quán.',
+      Reply: 'Quán thành thật xin lỗi anh Long vì sự cố thời tiết khiến đơn giao chậm trễ. Quán xin phép gửi tặng anh voucher giảm giá cho lần đặt tiếp theo ạ!',
+      Status: 'Đã phản hồi',
+      CreatedAt: new Date(Date.now() - 3600000 * 3)
+    }
+  ];
 
   private nextProductId = 9;
   private nextUserId = 4;
@@ -186,6 +242,7 @@ class Database {
   private nextCustomerId = 2;
   private nextHistoryId = 2;
   private nextComplaintId = 1;
+  private nextReviewId = 6;
 
   constructor() {
     // Seed some initial orders for demonstration
@@ -488,14 +545,107 @@ class Database {
     return false;
   }
 
-  addComplaint(data: Omit<Complaint, 'ComplaintId' | 'CreatedAt'>): Complaint {
-    const complaint: Complaint = {
-      ...data,
-      ComplaintId: this.nextComplaintId++,
+  addReview(data: Partial<Review>): Review {
+    const r: Review = {
+      ReviewId: this.nextReviewId++,
+      CustomerName: (data.CustomerName || 'Khách vãng lai').trim(),
+      Phone: (data.Phone || '').trim(),
+      Rating: Math.max(1, Math.min(5, Number(data.Rating) || 5)),
+      Category: data.Category || 'Chất lượng món ăn',
+      Content: (data.Content || '').trim(),
+      Reply: data.Reply || '',
+      Status: data.Status || (data.Reply ? 'Đã phản hồi' : 'Đã duyệt'),
       CreatedAt: new Date()
     };
-    this.complaints.push(complaint);
-    return complaint;
+    this.reviews.unshift(r);
+    // Đồng bộ vào complaints
+    this.complaints.unshift({
+      ...r,
+      ComplaintId: r.ReviewId
+    });
+    return r;
+  }
+
+  addComplaint(data: any): Complaint {
+    const r = this.addReview({
+      CustomerName: data.CustomerName,
+      Phone: data.Phone,
+      Rating: data.Rating || 5,
+      Category: data.Category || 'Chất lượng món ăn',
+      Content: data.Content
+    });
+    return {
+      ...r,
+      ComplaintId: r.ReviewId
+    };
+  }
+
+  getReviewStats() {
+    const total = this.reviews.length;
+    if (total === 0) {
+      return {
+        total: 0,
+        avgRating: 5.0,
+        avgFormatted: '5.0',
+        starCounts: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        starPercentages: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+        categoryCounts: {},
+        positivePercent: 100
+      };
+    }
+
+    const starCounts: Record<number, number> = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    const categoryCounts: Record<string, number> = {};
+    let totalScore = 0;
+
+    for (const r of this.reviews) {
+      const star = Math.max(1, Math.min(5, Math.round(r.Rating || 5)));
+      starCounts[star] = (starCounts[star] || 0) + 1;
+      totalScore += star;
+      const cat = r.Category || 'Góp ý chung';
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+    }
+
+    const avg = totalScore / total;
+    const starPercentages: Record<number, number> = {
+      5: Math.round(((starCounts[5] || 0) / total) * 100),
+      4: Math.round(((starCounts[4] || 0) / total) * 100),
+      3: Math.round(((starCounts[3] || 0) / total) * 100),
+      2: Math.round(((starCounts[2] || 0) / total) * 100),
+      1: Math.round(((starCounts[1] || 0) / total) * 100)
+    };
+
+    const positiveCount = (starCounts[5] || 0) + (starCounts[4] || 0);
+    const positivePercent = Math.round((positiveCount / total) * 100);
+
+    return {
+      total,
+      avgRating: avg,
+      avgFormatted: avg.toFixed(1),
+      starCounts,
+      starPercentages,
+      categoryCounts,
+      positivePercent
+    };
+  }
+
+  replyReview(id: number, replyText: string): boolean {
+    const r = this.reviews.find(item => item.ReviewId === id);
+    if (!r) return false;
+    r.Reply = replyText.trim();
+    r.Status = 'Đã phản hồi';
+    return true;
+  }
+
+  deleteReview(id: number): boolean {
+    const idx = this.reviews.findIndex(item => item.ReviewId === id);
+    if (idx !== -1) {
+      this.reviews.splice(idx, 1);
+      const cIdx = this.complaints.findIndex(c => c.ComplaintId === id);
+      if (cIdx !== -1) this.complaints.splice(cIdx, 1);
+      return true;
+    }
+    return false;
   }
 }
 

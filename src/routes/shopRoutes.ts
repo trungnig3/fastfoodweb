@@ -9,6 +9,7 @@ router.get(['/Shop/TrackOrder', '/Order/Track'], ShopController.trackOrder);
 router.post('/Shop/Checkout', ShopController.checkout);
 router.get('/Shop/PaymentCallback', ShopController.paymentCallback);
 router.post('/Shop/ChatBot', ShopController.chatBot);
-router.post('/Shop/SendComplaint', ShopController.sendComplaint);
+router.post(['/Shop/SendComplaint', '/Shop/SendReview', '/Shop/Feedback'], ShopController.sendComplaint);
+router.get(['/Shop/GetReviews', '/Shop/ReviewsData'], ShopController.getReviews);
 
 export default router;

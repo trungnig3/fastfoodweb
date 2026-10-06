@@ -97,12 +97,20 @@ export interface Order {
   OrderDetails?: OrderDetail[];
 }
 
-export interface Complaint {
-  ComplaintId: number;
-  CustomerName?: string;
+export interface Review {
+  ReviewId: number;
+  CustomerName: string;
   Phone?: string;
+  Rating: number; // 1 to 5 stars
+  Category: string; // "Chất lượng món ăn", "Tốc độ giao hàng", "Thái độ phục vụ", "Giá cả & Khuyến mãi", "Góp ý chung"
   Content: string;
+  Reply?: string;
+  Status?: string; // "Đã duyệt", "Chờ xử lý", "Đã phản hồi"
   CreatedAt: Date;
+}
+
+export interface Complaint extends Review {
+  ComplaintId: number;
 }
 
 export interface Attendance {

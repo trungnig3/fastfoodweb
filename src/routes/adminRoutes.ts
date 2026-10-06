@@ -49,6 +49,11 @@ router.post('/CreateCustomer', requireAdmin, AdminController.createCustomer);
 router.post('/EditCustomer', requireAdmin, AdminController.editCustomer);
 router.post('/DeleteCustomer', requireAdmin, AdminController.deleteCustomer);
 
+// Reviews & Complaints
+router.get(['/Reviews', '/Complaints'], requireAdmin, AdminController.reviews);
+router.post('/ReplyReview', requireAdmin, AdminController.replyReview);
+router.post('/DeleteReview', requireAdmin, AdminController.deleteReview);
+
 // Profile
 router.get('/Profile', requireAdmin, AdminController.profile);
 

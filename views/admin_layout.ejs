@@ -572,7 +572,11 @@
                         <span>Quản lý tồn kho</span>
                     </a>
 
-                    <div class="sidebar-section-title">THỐNG KÊ</div>
+                    <div class="sidebar-section-title">THỐNG KÊ & PHẢN HỒI</div>
+                    <a href="/Admin/Reviews" class="sidebar-item-link <%= path.startsWith('/admin/reviews') || path.startsWith('/admin/complaints') ? 'active' : '' %>">
+                        <i class="fas fa-star text-warning"></i>
+                        <span>Đánh giá & Góp ý (1-5⭐)</span>
+                    </a>
                     <a href="/Admin/RevenueReport" class="sidebar-item-link <%= path.startsWith('/admin/revenuereport') ? 'active' : '' %>">
                         <i class="fas fa-file-invoice-dollar"></i>
                         <span>Doanh thu theo thời gian</span>

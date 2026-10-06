@@ -52,6 +52,9 @@ export class AdminController {
       .sort((a, b) => b.count - a.count)
       .slice(0, 4);
 
+    const reviewStats = db.getReviewStats();
+    const recentReviews = db.reviews.slice(0, 4);
+
     await renderAdmin(req, res, 'index', 'Tổng quan', {
       todayRevenue,
       todayOrdersCount,
@@ -61,7 +64,9 @@ export class AdminController {
       lowStockCount,
       recentOrders,
       dailyTrend,
-      topSelling
+      topSelling,
+      reviewStats,
+      recentReviews
     });
   }
 
@@ -531,6 +536,63 @@ export class AdminController {
     const id = parseInt(req.body.id, 10);
     const ok = db.deleteCustomer(id);
     res.json({ success: ok });
+  }
+
+  // Quản lý & Tổng Hợp Đánh Giá Khách Hàng
+  static async reviews(req: Request, res: Response) {
+    const starFilter = parseInt(req.query.star as string, 10);
+    const categoryFilter = ((req.query.category as string) || '').trim();
+    const search = ((req.query.search as string) || '').trim().toLowerCase();
+
+    let list = [...db.reviews];
+
+    if (!isNaN(starFilter) && starFilter >= 1 && starFilter <= 5) {
+      list = list.filter(r => Math.round(r.Rating) === starFilter);
+    }
+    if (categoryFilter && categoryFilter !== 'all') {
+      list = list.filter(r => r.Category === categoryFilter);
+    }
+    if (search) {
+      list = list.filter(
+        r =>
+          r.CustomerName.toLowerCase().includes(search) ||
+          (r.Phone && r.Phone.includes(search)) ||
+          r.Content.toLowerCase().includes(search)
+      );
+    }
+
+    const stats = db.getReviewStats();
+
+    await renderAdmin(req, res, 'reviews', 'Quản Lý & Tổng Hợp Đánh Giá', {
+      reviews: list,
+      stats,
+      selectedStar: !isNaN(starFilter) ? starFilter : '',
+      selectedCategory: categoryFilter || 'all',
+      searchKey: req.query.search || ''
+    });
+  }
+
+  // Phản hồi đánh giá của khách
+  static replyReview(req: Request, res: Response) {
+    const id = parseInt(req.body.id, 10);
+    const reply = (req.body.reply || '').trim();
+    if (id && reply) {
+      db.replyReview(id, reply);
+    }
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.json({ success: true, message: 'Đã gửi phản hồi đánh giá thành công!' });
+    }
+    res.redirect('/Admin/Reviews');
+  }
+
+  // Xóa đánh giá spam
+  static deleteReview(req: Request, res: Response) {
+    const id = parseInt(req.body.id, 10);
+    const ok = db.deleteReview(id);
+    if (req.xhr || req.headers.accept?.includes('application/json')) {
+      return res.json({ success: ok, message: ok ? 'Đã xóa đánh giá thành công!' : 'Không tìm thấy đánh giá!' });
+    }
+    res.redirect('/Admin/Reviews');
   }
 
   // Thông tin quản trị viên

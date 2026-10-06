@@ -71,6 +71,9 @@ export class ShopController {
       }
     }
 
+    const reviewStats = db.getReviewStats();
+    const recentReviews = db.reviews.slice(0, 8);
+
     res.render('shop/index', {
       products: allProducts,
       outOfStockItems,
@@ -79,7 +82,9 @@ export class ShopController {
       user: currentUser,
       customerPoints,
       customerTier,
-      customerPhone
+      customerPhone,
+      reviewStats,
+      recentReviews
     });
   }
 
@@ -475,38 +480,73 @@ export class ShopController {
     });
   }
 
-  // Trợ lý AI tư vấn và đặt món thông minh
-  static chatBot(req: Request, res: Response) {
-    const result = handleChatBotMessage(req.body.Message, {
-      protocol: req.protocol,
-      host: req.get('host') || 'localhost:3000'
-    });
-    return res.json(result);
+  // Trợ lý AI tư vấn và đặt món thông minh (Google Gemini + Smart Automation)
+  static async chatBot(req: Request, res: Response) {
+    try {
+      const message = req.body.message || req.body.Message || req.body.prompt || '';
+      const result = await handleChatBotMessage(message, {
+        protocol: req.protocol,
+        host: req.get('host') || 'localhost:3000'
+      });
+      return res.json(result);
+    } catch (err: any) {
+      console.error('Error in chatBot controller:', err);
+      return res.json({
+        reply: '👋 Trợ lý AI FastFood Express sẵn sàng phục vụ! Bạn cần tìm món ngon hay đặt hàng cứ nhắn cho mình nhé.'
+      });
+    }
   }
 
-  // Khách hàng gửi khiếu nại / phản ánh dịch vụ
+  // Khách hàng gửi đánh giá (1-5 sao) & phản hồi góp ý dịch vụ
   static async sendComplaint(req: Request, res: Response) {
     try {
-      const { CustomerName, Phone, Content } = req.body;
-      db.addComplaint({
-        CustomerName: CustomerName || 'Khách vãng lai',
-        Phone: Phone || 'Chưa cung cấp',
-        Content: Content || ''
+      const { CustomerName, Phone, Content, Rating, Category } = req.body;
+      const numRating = Math.max(1, Math.min(5, parseInt(Rating, 10) || 5));
+      const categoryStr = (Category || 'Chất lượng món ăn').trim();
+      const contentStr = (Content || '').trim();
+
+      if (!contentStr && numRating <= 3) {
+        return res.json({ success: false, message: 'Vui lòng nhập thêm nội dung góp ý để quán cải thiện chất lượng phục vụ nhé!' });
+      }
+
+      const review = db.addReview({
+        CustomerName: (CustomerName || 'Khách vãng lai').trim(),
+        Phone: (Phone || '').trim(),
+        Rating: numRating,
+        Category: categoryStr,
+        Content: contentStr || `Đánh giá ${numRating} sao dịch vụ.`
       });
 
-      // Gửi email về Gmail quản trị viên
-      await sendComplaintEmail({
-        CustomerName: CustomerName || 'Khách vãng lai',
-        Phone: Phone || 'Chưa cung cấp',
-        Content: Content || ''
+      // Gửi email về Gmail quản trị viên chạy nền không chặn phản hồi
+      sendComplaintEmail({
+        CustomerName: review.CustomerName,
+        Phone: review.Phone,
+        Rating: review.Rating,
+        Category: review.Category,
+        Content: review.Content
+      }).catch(err => {
+        console.warn('Lỗi gửi email đánh giá chạy nền:', err?.message || err);
       });
 
       return res.json({
         success: true,
-        message: 'Đã gửi khiếu nại thành công! Chủ quán sẽ liên hệ lại với bạn sớm nhất.'
+        message: `Cảm ơn bạn đã gửi đánh giá ${numRating} sao và góp ý! FastFood Express trân trọng mọi ý kiến đóng góp của quý khách.`,
+        review,
+        stats: db.getReviewStats()
       });
     } catch (err: any) {
-      return res.json({ success: false, message: 'Lỗi khi gửi khiếu nại: ' + err.message });
+      return res.json({ success: false, message: 'Lỗi khi gửi đánh giá: ' + err.message });
     }
+  }
+
+  // API lấy danh sách đánh giá & thống kê công khai
+  static getReviews(req: Request, res: Response) {
+    const stats = db.getReviewStats();
+    const reviews = db.reviews;
+    return res.json({
+      success: true,
+      stats,
+      reviews
+    });
   }
 }
