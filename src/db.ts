@@ -28,7 +28,9 @@ class Database {
       FullName: 'Quản Trị Viên (ADMIN)',
       RoleId: 1,
       HourlyRate: 35000,
-      IsActive: true
+      IsActive: true,
+      PhoneNumber: '0900000001',
+      Email: 'admin@fastfoodexpress.vn'
     },
     {
       UserId: 2,
@@ -37,7 +39,9 @@ class Database {
       FullName: 'Thu Ngân Quầy Bán Hàng (THU NGÂN)',
       RoleId: 2,
       HourlyRate: 25000,
-      IsActive: true
+      IsActive: true,
+      PhoneNumber: '0900000002',
+      Email: 'thungan@fastfoodexpress.vn'
     },
     {
       UserId: 3,
@@ -47,7 +51,8 @@ class Database {
       RoleId: 3,
       HourlyRate: 0,
       IsActive: true,
-      PhoneNumber: '0987654321'
+      PhoneNumber: '0987654321',
+      Email: 'khachhang@gmail.com'
     }
   ];
 
@@ -248,6 +253,24 @@ class Database {
   getUser(username: string): User | undefined {
     const cleanUser = (username || '').trim().toLowerCase();
     return this.users.find(u => u.Username.toLowerCase() === cleanUser && u.IsActive);
+  }
+
+  getUserByEmail(email: string): User | undefined {
+    const clean = (email || '').trim().toLowerCase();
+    if (!clean) return undefined;
+    return this.users.find(u => u.Email && u.Email.toLowerCase() === clean && u.IsActive);
+  }
+
+  getUserByPhone(phone: string): User | undefined {
+    const clean = (phone || '').trim().replace(/[\s.-]/g, '');
+    if (!clean) return undefined;
+    return this.users.find(u => u.PhoneNumber && u.PhoneNumber.replace(/[\s.-]/g, '') === clean && u.IsActive);
+  }
+
+  getUserByEmailOrPhone(query: string): User | undefined {
+    const clean = (query || '').trim();
+    if (!clean) return undefined;
+    return this.getUserByEmail(clean) || this.getUserByPhone(clean) || this.getUser(clean);
   }
 
   getUserById(id: number): User | undefined {

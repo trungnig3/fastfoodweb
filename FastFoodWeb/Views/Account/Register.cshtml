@@ -1,0 +1,68 @@
+﻿@{
+    ViewBag.Title = "Đăng Ký Tài Khoản";
+    string error = ViewBag.Error as string;
+    string fullName = ViewBag.FullName as string ?? "";
+    string phone = ViewBag.Phone as string ?? "";
+    string email = ViewBag.Email as string ?? "";
+    string username = ViewBag.Username as string ?? "";
+}
+
+<div class="container py-5" style="max-width: 480px;">
+    <div class="card p-4 shadow border-0 rounded-4">
+        <div class="text-center mb-4">
+            <div class="p-3 d-inline-flex rounded-circle bg-danger text-white mb-2">
+                <i class="fas fa-user-plus fs-3"></i>
+            </div>
+            <h4 class="fw-bold text-dark">Đăng Ký Thành Viên</h4>
+            <p class="text-muted small">Tích điểm thưởng và nhận ưu đãi giảm giá đặc quyền</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                <i class="fas fa-circle-exclamation"></i>
+                <div>@error</div>
+            </div>
+        }
+
+        <form method="post" action="@Url.Action("Register", "Account")">
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-dark text-uppercase mb-1">Họ và tên <span class="text-danger">*</span>:</label>
+                <input type="text" name="fullName" class="form-control" placeholder="Ví dụ: Nguyễn Văn An" value="@fullName" required autocomplete="name" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-dark text-uppercase mb-1">Số điện thoại <span class="text-danger">*</span> (dùng để tích điểm):</label>
+                <input type="tel" name="phone" class="form-control" placeholder="09xxxxxxxx" value="@phone" required pattern="[0-9]{9,11}" title="Vui lòng nhập số điện thoại từ 9 đến 11 chữ số" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-dark text-uppercase mb-1">Email / Gmail <span class="text-danger">*</span> (nhận OTP & ưu đãi):</label>
+                <input type="email" name="email" class="form-control" placeholder="example@gmail.com" value="@email" required autocomplete="email" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-dark text-uppercase mb-1">Tên đăng nhập <span class="text-danger">*</span>:</label>
+                <input type="text" name="username" class="form-control" placeholder="Nhập tên tài khoản (viết liền không dấu)" value="@username" required autocomplete="username" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small fw-bold text-dark text-uppercase mb-1">Mật khẩu <span class="text-danger">*</span>:</label>
+                <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu" required autocomplete="new-password" />
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label small fw-bold text-dark text-uppercase mb-1">Xác nhận mật khẩu <span class="text-danger">*</span>:</label>
+                <input type="password" name="confirmPassword" class="form-control" placeholder="Nhập lại mật khẩu" required autocomplete="new-password" />
+            </div>
+
+            <button type="submit" class="btn btn-danger w-100 py-2 fw-bold mb-3 shadow-sm">
+                <i class="fas fa-user-plus me-1"></i> Đăng Ký Tài Khoản
+            </button>
+        </form>
+
+        <div class="text-center small text-muted pt-2 border-top">
+            Đã có tài khoản? <a href="@Url.Action("Login", "Account")" class="text-danger fw-bold text-decoration-none">Đăng nhập ngay</a>
+        </div>
+    </div>
+</div>

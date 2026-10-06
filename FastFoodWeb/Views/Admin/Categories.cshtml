@@ -1,0 +1,58 @@
+﻿@model IEnumerable<FastFoodWeb.Models.Category>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "Quản Lý Danh Mục Món Ăn";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Quản Lý Danh Mục Món Ăn</h4>
+        <p class="text-muted small mb-0">Phân loại thực đơn phục vụ bộ lọc tìm kiếm trên giao diện người dùng</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card p-3 border shadow-sm rounded-3">
+            <h6 class="fw-bold mb-3 text-dark"><i class="fas fa-plus-circle text-danger me-1"></i> Thêm Danh Mục Mới</h6>
+            @using (Html.BeginForm("CreateCategory", "Admin", FormMethod.Post))
+            {
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Tên danh mục *:</label>
+                    <input type="text" name="categoryName" class="form-control" placeholder="Ví dụ: Đồ Uống Trái Cây" required />
+                </div>
+                <button type="submit" class="btn btn-danger w-100 fw-bold">
+                    <i class="fas fa-save me-1"></i> Lưu Danh Mục
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card border shadow-sm rounded-3">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 70px;">Mã</th>
+                            <th>Tên Danh Mục</th>
+                            <th class="text-end">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model)
+                        {
+                            <tr>
+                                <td><b>#@c.CategoryId</b></td>
+                                <td><b class="text-dark">@c.CategoryName</b></td>
+                                <td class="text-end">
+                                    <span class="badge bg-success">Đang dùng</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

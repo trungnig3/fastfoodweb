@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - Quản Trị Hệ Thống FastFood</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="~/Content/Site.css" rel="stylesheet" />
+</head>
+<body class="admin-body">
+    <div class="admin-wrapper d-flex">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar p-3 text-white" style="width: 250px; min-height: 100vh; background: #0F172A;">
+            <div class="brand mb-4 pb-3 border-bottom border-secondary">
+                <a href="@Url.Action("Index", "Admin")" class="text-white text-decoration-none fw-bold fs-5 d-flex align-items-center gap-2">
+                    <span class="p-2 rounded bg-danger"><i class="fas fa-hamburger"></i></span>
+                    <span>FastFood Admin</span>
+                </a>
+            </div>
+            <ul class="nav flex-column gap-1">
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Index", "Admin")"><i class="fas fa-chart-pie me-2"></i> Tổng Quan</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Products", "Admin")"><i class="fas fa-burger me-2"></i> Quản Lý Món Ăn</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Inventory", "Admin")"><i class="fas fa-boxes-stacked me-2"></i> Quản Lý Tồn Kho</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Orders", "Admin")"><i class="fas fa-receipt me-2"></i> Lịch Sử Hóa Đơn</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Categories", "Admin")"><i class="fas fa-tags me-2"></i> Danh Mục Món</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Customers", "Admin")"><i class="fas fa-users me-2"></i> Khách & Tích Điểm</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Staff", "Admin")"><i class="fas fa-user-shield me-2"></i> Nhân Viên & Lương</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Complaints", "Admin")"><i class="fas fa-comment-dots me-2"></i> Khiếu Nại / Góp Ý</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white-50 py-2 px-3 rounded" href="@Url.Action("Reports", "Admin")"><i class="fas fa-file-invoice-dollar me-2"></i> Báo Cáo Doanh Thu</a>
+                </li>
+            </ul>
+            <div class="mt-auto pt-4 border-top border-secondary">
+                <a href="@Url.Action("Index", "Shop")" class="btn btn-outline-light btn-sm w-100 mb-2"><i class="fas fa-shop me-1"></i> Đến Cửa Hàng</a>
+                <a href="@Url.Action("Logout", "Account")" class="btn btn-danger btn-sm w-100"><i class="fas fa-sign-out-alt me-1"></i> Đăng Xuất</a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-grow-1 p-4 bg-light" style="min-height: 100vh;">
+            <div class="container-fluid">
+                @RenderBody()
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @RenderSection("scripts", required: false)
+</body>
+</html>

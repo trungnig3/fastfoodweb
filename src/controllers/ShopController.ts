@@ -128,6 +128,90 @@ export class ShopController {
     });
   }
 
+  // Tra cứu & theo dõi tiến trình đơn hàng (tự động chuyển: 5p -> đang giao, 15p -> đã giao)
+  static trackOrder(req: Request, res: Response) {
+    const query = ((req.query.query as string) || '').trim();
+    if (!query) {
+      return res.json({ success: false, message: 'Vui lòng nhập mã đơn hàng hoặc số điện thoại!' });
+    }
+
+    const order = db.orders
+      .slice()
+      .reverse()
+      .find(o => 
+        o.OrderCode.toLowerCase() === query.toLowerCase() || 
+        (o.CustomerPhone && o.CustomerPhone.trim() === query)
+      );
+
+    if (!order) {
+      return res.json({ success: false, message: `Không tìm thấy đơn hàng nào khớp với "${query}".` });
+    }
+
+    const elapsedSeconds = (Date.now() - new Date(order.OrderDate).getTime()) / 1000;
+    let step = 1;
+    let statusTitle = 'Đang chuẩn bị món';
+    let statusDesc = 'Đầu bếp đang chế biến món ăn nóng hổi theo đơn của bạn.';
+
+    if (order.OrderStatus !== 'Đã hủy' && order.OrderStatus !== 'Cancelled') {
+      if (elapsedSeconds < 300) {
+        step = 1;
+        statusTitle = 'Đang chuẩn bị món';
+        statusDesc = `Bếp đang chuẩn bị món. Dự kiến chuyển sang giao hàng trong ${Math.max(1, Math.ceil((300 - elapsedSeconds) / 60))} phút.`;
+        order.ShippingStatus = 'Đang chuẩn bị món';
+      } else if (elapsedSeconds < 900) {
+        step = 2;
+        statusTitle = 'Đang giao hàng';
+        statusDesc = 'Shipper đang trên đường giao hàng đến địa chỉ của bạn.';
+        order.ShippingStatus = 'Đang giao hàng';
+        if (order.OrderStatus === 'Pending') order.OrderStatus = 'Processing';
+      } else {
+        step = 3;
+        statusTitle = 'Đã giao hàng thành công';
+        statusDesc = 'Đơn hàng đã được giao tận nơi. Chúc bạn ngon miệng!';
+        order.ShippingStatus = 'Đã giao hàng';
+        order.OrderStatus = 'Hoàn tất';
+      }
+    } else {
+      step = 0;
+      statusTitle = 'Đơn hàng đã hủy';
+      statusDesc = 'Đơn hàng này đã bị hủy.';
+    }
+
+    const details = db.orderDetails
+      .filter(d => d.OrderId === order.OrderId)
+      .map(d => {
+        const prod = db.getProductById(d.ProductId);
+        return {
+          productName: prod ? prod.ProductName : 'Món ăn',
+          quantity: d.Quantity,
+          unitPrice: d.UnitPrice,
+          lineTotal: d.Quantity * d.UnitPrice
+        };
+      });
+
+    return res.json({
+      success: true,
+      order: {
+        orderCode: order.OrderCode,
+        orderDate: new Date(order.OrderDate).toLocaleString('vi-VN'),
+        elapsedSeconds: Math.floor(elapsedSeconds),
+        step,
+        statusTitle,
+        statusDesc,
+        subTotal: order.SubTotal || 0,
+        discountAmount: order.DiscountAmount || 0,
+        shippingFee: order.ShippingFee || 0,
+        totalAmount: order.TotalAmount,
+        paymentMethod: order.PaymentMethod,
+        shippingAddress: order.ShippingAddress,
+        customerPhone: order.CustomerPhone,
+        shipperName: order.ShipperName || 'Nguyễn Văn Giao',
+        shipperPhone: order.ShipperPhone || '0901234567',
+        items: details
+      }
+    });
+  }
+
   // Đặt hàng online (COD hoặc VNPAY) có hỗ trợ sử dụng điểm tích lũy
   static checkout(req: Request, res: Response) {
     try {

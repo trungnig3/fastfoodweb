@@ -22,6 +22,10 @@ const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
 // Middlewares
+app.use((req, res, next) => {
+  res.charset = 'utf-8';
+  next();
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser() as any);

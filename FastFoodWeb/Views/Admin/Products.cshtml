@@ -1,0 +1,80 @@
+﻿@model IEnumerable<FastFoodWeb.Models.Product>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "Quản Lý Món Ăn";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Quản Lý Danh Sách Món Ăn</h4>
+        <p class="text-muted small mb-0">Thêm mới, sửa giá, hình ảnh, combo và kiểm soát trạng thái món ăn</p>
+    </div>
+    <a href="@Url.Action("CreateProduct", "Admin")" class="btn btn-danger fw-bold"><i class="fas fa-plus me-1"></i> Thêm Món Mới</a>
+</div>
+
+<div class="card border shadow-sm rounded-3">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 70px;">Hình</th>
+                    <th>Tên Món Ăn</th>
+                    <th>Danh Mục</th>
+                    <th>Giá Bán</th>
+                    <th>Tồn Kho</th>
+                    <th>Loại</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-end" style="width: 140px;">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>
+                            <img src="@p.ImageURL" class="rounded object-fit-cover" style="width: 48px; height: 48px;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'" />
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">@p.ProductName</div>
+                            <small class="text-muted text-truncate d-block" style="max-width: 260px;">@p.Description</small>
+                        </td>
+                        <td>@(p.Category != null ? p.Category.CategoryName : (p.CategoryId == 1 ? "Món Chính" : (p.CategoryId == 2 ? "Combo" : "Đồ Uống")))</td>
+                        <td><b class="text-danger">@p.Price.ToString("N0") đ</b></td>
+                        <td>
+                            @if (p.StockQuantity <= 0)
+                            {
+                                <span class="badge bg-danger">Hết hàng</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-dark border">@p.StockQuantity phần</span>
+                            }
+                        </td>
+                        <td>
+                            @if (p.IsCombo)
+                            {
+                                <span class="badge bg-warning text-dark">Combo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-muted border">Đơn lẻ</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @(p.IsActive ? "bg-success" : "bg-secondary")">
+                                @(p.IsActive ? "Kinh doanh" : "Tạm ngưng")
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="@Url.Action("EditProduct", "Admin", new { id = p.ProductId })" class="btn btn-sm btn-outline-primary me-1"><i class="fas fa-edit"></i></a>
+                            <form method="post" action="@Url.Action("DeleteProduct", "Admin")" class="d-inline" onsubmit="return confirm('Bạn có chắc muốn xóa món này?');">
+                                <input type="hidden" name="id" value="@p.ProductId" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

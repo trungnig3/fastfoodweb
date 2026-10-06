@@ -14,6 +14,7 @@ export interface User {
   HourlyRate: number;
   IsActive: boolean;
   PhoneNumber?: string;
+  Email?: string;
 }
 
 export interface Category {

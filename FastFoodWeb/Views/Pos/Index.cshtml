@@ -1,0 +1,319 @@
+﻿@model IEnumerable<FastFoodWeb.Models.Product>
+@{
+    Layout = null; // Màn hình POS chạy fullscreen không dùng chung layout
+    var categories = ViewBag.Categories as IEnumerable<FastFoodWeb.Models.Category> ?? new List<FastFoodWeb.Models.Category>();
+    var activeShift = ViewBag.ActiveShift as FastFoodWeb.Models.Shift;
+    string cashierName = ViewBag.CashierName as string ?? "Thu ngân";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hệ Thống Bán Hàng Cảm Ứng POS - FastFood</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link href="~/Content/Site.css" rel="stylesheet" />
+</head>
+<body class="bg-light" style="overflow-x: hidden;">
+    <!-- POS HEADER -->
+    <header class="navbar navbar-dark bg-dark px-3 py-2 text-white">
+        <div class="d-flex align-items-center gap-3">
+            <span class="fw-bold fs-5 text-danger"><i class="fas fa-calculator me-1"></i> FASTFOOD POS</span>
+            <span class="badge bg-secondary">Thu ngân: @cashierName</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="@Url.Action("Index", "Cashier")" class="btn btn-outline-light btn-sm"><i class="fas fa-desktop me-1"></i> Bàn Thu Ngân</a>
+            <a href="@Url.Action("Index", "Shop")" class="btn btn-outline-light btn-sm"><i class="fas fa-shop me-1"></i> Cửa Hàng</a>
+        </div>
+    </header>
+
+    <div class="container-fluid py-3">
+        <div class="row g-3">
+            <!-- CỘT TRÁI: DANH SÁCH MÓN ĂN & DANH MỤC -->
+            <div class="col-lg-8">
+                <!-- Categories filter -->
+                <div class="d-flex gap-2 overflow-auto pb-2 mb-3">
+                    <button class="btn btn-sm btn-dark text-nowrap fw-bold" onclick="filterPosCat('all', this)">Tất cả</button>
+                    @foreach (var c in categories)
+                    {
+                        <button class="btn btn-sm btn-outline-secondary text-nowrap" onclick="filterPosCat('@c.CategoryId', this)">@c.CategoryName</button>
+                    }
+                </div>
+
+                <!-- Products Grid -->
+                <div class="row g-2" style="max-height: 75vh; overflow-y: auto;">
+                    @foreach (var p in Model)
+                    {
+                        <div class="col-md-3 col-sm-4 col-6 pos-prod-card" data-cat="@p.CategoryId">
+                            <div class="card h-100 p-2 border shadow-sm text-center" style="cursor: pointer;" data-id="@p.ProductId" data-name="@p.ProductName" data-price="@p.Price" onclick="addPosItemFromCard(this)">
+                                <img src="@p.ImageURL" class="w-100 rounded mb-2" style="height: 100px; object-fit: cover;" onerror="this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500'" />
+                                <div class="fw-bold small text-truncate">@p.ProductName</div>
+                                <div class="text-danger fw-bold small">@p.Price.ToString("N0") đ</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- CỘT PHẢI: GIỎ HÀNG QUẦY & THANH TOÁN -->
+            <div class="col-lg-4">
+                <div class="card p-3 border shadow-sm rounded-3">
+                    <h6 class="fw-bold border-bottom pb-2 mb-3 text-dark"><i class="fas fa-receipt text-danger me-1"></i> Hóa Đơn Bán Lẻ</h6>
+
+                    <!-- Khách hàng & Tích điểm -->
+                    <div class="mb-2">
+                        <div class="input-group input-group-sm">
+                            <input type="tel" id="txtPhoneInput" class="form-control" placeholder="SĐT khách hàng (tích điểm)..." />
+                            <button class="btn btn-dark" onclick="searchCustomerPos()"><i class="fas fa-search"></i></button>
+                        </div>
+                        <div id="customerFoundPill" class="p-2 mt-1 rounded bg-warning-subtle small border border-warning-subtle d-none">
+                            <div class="d-flex justify-content-between">
+                                <b id="customerFoundName">Khách hàng</b>
+                                <span class="badge bg-danger" id="customerFoundTier">Đồng</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span>Điểm: <b class="text-danger" id="customerFoundPoints">0</b></span>
+                                <div class="form-check form-switch m-0">
+                                    <input class="form-check-input" type="checkbox" id="chkUseLoyaltyPoints" onchange="renderPosCart()" />
+                                    <label class="form-check-label small" for="chkUseLoyaltyPoints">Dùng điểm</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách món đã chọn -->
+                    <div id="posCartList" class="border rounded p-2 mb-3 bg-white" style="height: 220px; overflow-y: auto;">
+                        <div class="text-center text-muted py-4 small" id="emptyPosNotice">Chưa có món nào được chọn</div>
+                    </div>
+
+                    <!-- Tổng tiền & Chiết khấu -->
+                    <div class="small">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Tạm tính tiền hàng:</span>
+                            <b id="posSubTotalText">0 đ</b>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 text-danger d-none" id="posDiscountRow">
+                            <span>Giảm trừ điểm:</span>
+                            <b id="posDiscountText">-0 đ</b>
+                        </div>
+                        <div class="d-flex justify-content-between fs-5 fw-bold border-top pt-2 text-danger">
+                            <span>TỔNG CỘNG:</span>
+                            <span id="posFinalTotalText">0 đ</span>
+                        </div>
+                    </div>
+
+                    <!-- Phương thức thanh toán -->
+                    <div class="my-3">
+                        <div class="btn-group w-100 btn-group-sm">
+                            <button type="button" class="btn btn-dark active" id="btnPayCash" onclick="setPayMethod('Cash')">Tiền Mặt</button>
+                            <button type="button" class="btn btn-outline-dark" id="btnPayVnPay" onclick="setPayMethod('VnPay')">VNPay QR</button>
+                        </div>
+                        <div id="cashInputWrap" class="mt-2">
+                            <input type="number" id="cashGivenInput" class="form-control form-control-sm" placeholder="Tiền khách đưa (VNĐ)..." oninput="calcChange()" />
+                            <div class="d-flex justify-content-between small text-muted mt-1">
+                                <span>Tiền thối lại:</span>
+                                <b class="text-success" id="cashChangeText">0 đ</b>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-danger w-100 fw-bold py-2 shadow-sm" id="btnPosCheckout" onclick="checkoutPosOrder()">
+                        <i class="fas fa-check-circle me-1"></i> THANH TOÁN (F9)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IN BIÊN LAI -->
+    <iframe id="receiptPrintIframe" style="position: fixed; right: 0; bottom: 0; width: 0; height: 0; border: 0;"></iframe>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let posCart = [];
+        let activeCustomer = null;
+        let activePaymentMethod = 'Cash';
+
+        function formatVND(num) {
+            return Number(num).toLocaleString('vi-VN') + ' đ';
+        }
+
+        function filterPosCat(catId, btn) {
+            document.querySelectorAll('.btn-outline-secondary, .btn-dark').forEach(b => {
+                if (b.onclick?.toString().includes('filterPosCat')) {
+                    b.classList.remove('btn-dark');
+                    b.classList.add('btn-outline-secondary');
+                }
+            });
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-dark');
+
+            document.querySelectorAll('.pos-prod-card').forEach(c => {
+                c.style.display = (catId === 'all' || c.getAttribute('data-cat') === String(catId)) ? 'block' : 'none';
+            });
+        }
+
+        function addPosItemFromCard(card) {
+            if (!card) return;
+            const id = parseInt(card.getAttribute('data-id'), 10);
+            const name = card.getAttribute('data-name') || '';
+            const price = parseFloat(card.getAttribute('data-price')) || 0;
+            addPosItem(id, name, price);
+        }
+
+        function addPosItem(id, name, price) {
+            const found = posCart.find(i => i.id === id);
+            if (found) found.quantity++;
+            else posCart.push({ id, name, price, quantity: 1 });
+            renderPosCart();
+        }
+
+        function updatePosQty(id, delta) {
+            const idx = posCart.findIndex(i => i.id === id);
+            if (idx !== -1) {
+                posCart[idx].quantity += delta;
+                if (posCart[idx].quantity <= 0) posCart.splice(idx, 1);
+                renderPosCart();
+            }
+        }
+
+        function renderPosCart() {
+            const list = document.getElementById('posCartList');
+            const notice = document.getElementById('emptyPosNotice');
+            if (posCart.length === 0) {
+                list.innerHTML = '';
+                list.appendChild(notice);
+                document.getElementById('posSubTotalText').innerText = '0 đ';
+                document.getElementById('posFinalTotalText').innerText = '0 đ';
+                document.getElementById('posDiscountRow').classList.add('d-none');
+                return;
+            }
+
+            list.innerHTML = '';
+            let subTotal = 0;
+            posCart.forEach(i => {
+                subTotal += i.price * i.quantity;
+                const row = document.createElement('div');
+                row.className = 'd-flex justify-content-between align-items-center small mb-1 pb-1 border-bottom';
+                row.innerHTML = `
+                    <div class="text-truncate" style="max-width: 55%;"><b>${i.name}</b><br><small class="text-danger">${formatVND(i.price)}</small></div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-sm btn-light border py-0" onclick="updatePosQty(${i.id}, -1)">-</button>
+                        <span class="px-2 py-0 border-top border-bottom bg-white fw-bold">${i.quantity}</span>
+                        <button class="btn btn-sm btn-light border py-0" onclick="updatePosQty(${i.id}, 1)">+</button>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+
+            document.getElementById('posSubTotalText').innerText = formatVND(subTotal);
+
+            // Điểm thưởng
+            const chk = document.getElementById('chkUseLoyaltyPoints');
+            let discount = 0;
+            if (chk && chk.checked && activeCustomer && activeCustomer.points > 0) {
+                const maxPoints = Math.min(activeCustomer.points, Math.floor(subTotal / 1000));
+                discount = maxPoints * 1000;
+                document.getElementById('posDiscountRow').classList.remove('d-none');
+                document.getElementById('posDiscountText').innerText = '-' + formatVND(discount);
+            } else {
+                document.getElementById('posDiscountRow').classList.add('d-none');
+            }
+
+            const finalTotal = Math.max(0, subTotal - discount);
+            document.getElementById('posFinalTotalText').innerText = formatVND(finalTotal);
+            calcChange();
+        }
+
+        function searchCustomerPos() {
+            const phone = document.getElementById('txtPhoneInput').value.trim();
+            if (!phone) return;
+            fetch('@Url.Action("SearchCustomer", "Pos")?phone=' + encodeURIComponent(phone))
+                .then(r => r.json())
+                .then(data => {
+                    const pill = document.getElementById('customerFoundPill');
+                    if (data.found && data.customer) {
+                        activeCustomer = data.customer;
+                        document.getElementById('customerFoundName').innerText = data.customer.name;
+                        document.getElementById('customerFoundTier').innerText = data.customer.tier;
+                        document.getElementById('customerFoundPoints').innerText = data.customer.points;
+                        pill.classList.remove('d-none');
+                    } else {
+                        activeCustomer = null;
+                        pill.classList.add('d-none');
+                    }
+                    renderPosCart();
+                });
+        }
+
+        function setPayMethod(m) {
+            activePaymentMethod = m;
+            document.getElementById('btnPayCash').className = m === 'Cash' ? 'btn btn-dark active' : 'btn btn-outline-dark';
+            document.getElementById('btnPayVnPay').className = m === 'VnPay' ? 'btn btn-dark active' : 'btn btn-outline-dark';
+            document.getElementById('cashInputWrap').style.display = m === 'Cash' ? 'block' : 'none';
+        }
+
+        function calcChange() {
+            const given = parseFloat(document.getElementById('cashGivenInput').value) || 0;
+            const total = parseFloat(document.getElementById('posFinalTotalText').innerText.replace(/[^\d]/g, '')) || 0;
+            const change = Math.max(0, given - total);
+            document.getElementById('cashChangeText').innerText = formatVND(change);
+        }
+
+        function checkoutPosOrder() {
+            if (posCart.length === 0) return alert('Chưa chọn món nào!');
+            const chk = document.getElementById('chkUseLoyaltyPoints');
+
+            fetch('@Url.Action("CreateOrder", "Pos")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Items: posCart,
+                    PaymentMethod: activePaymentMethod,
+                    CustomerPhone: document.getElementById('txtPhoneInput').value.trim(),
+                    UsePoints: Boolean(chk && chk.checked),
+                    CashGiven: parseFloat(document.getElementById('cashGivenInput').value) || 0
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Thanh toán thành công hóa đơn #' + data.orderCode);
+                    printPosReceipt(data.orderCode);
+                    posCart = [];
+                    activeCustomer = null;
+                    document.getElementById('txtPhoneInput').value = '';
+                    document.getElementById('customerFoundPill').classList.add('d-none');
+                    document.getElementById('cashGivenInput').value = '';
+                    renderPosCart();
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            });
+        }
+
+        function printPosReceipt(orderCode) {
+            const printFrame = document.getElementById('receiptPrintIframe');
+            const sub = document.getElementById('posSubTotalText').innerText;
+            const total = document.getElementById('posFinalTotalText').innerText;
+
+            let html = `
+                <div style="font-family: monospace; width: 72mm; margin: auto; padding: 2mm;">
+                    <div style="text-align: center; font-weight: bold; font-size: 16px;">FASTFOOD POS</div>
+                    <div style="text-align: center; font-size: 11px;">HÓA ĐƠN BÁN LẺ: ${orderCode}</div>
+                    <div style="border-top: 1px dashed #000; margin: 4px 0;"></div>
+                    <div style="font-size: 12px;">Tổng cộng: <b>${total}</b></div>
+                    <div style="font-size: 11px; text-align: center; margin-top: 8px;">CẢM ƠN QUÝ KHÁCH!</div>
+                </div>
+            `;
+            const doc = printFrame.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+            setTimeout(() => printFrame.contentWindow.print(), 200);
+        }
+    </script>
+</body>
+</html>

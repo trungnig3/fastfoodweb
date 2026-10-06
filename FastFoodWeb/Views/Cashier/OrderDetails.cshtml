@@ -1,0 +1,94 @@
+﻿@model FastFoodWeb.Models.Order
+@{
+    Layout = "~/Views/Shared/_CashierLayout.cshtml";
+    ViewBag.Title = "Chi Tiết Đơn Hàng #" + Model.OrderCode;
+    var details = ViewBag.OrderDetails as IEnumerable<FastFoodWeb.Models.OrderDetail> ?? new List<FastFoodWeb.Models.OrderDetail>();
+}
+
+<div class="container py-3" style="max-width: 820px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a href="@Url.Action("Orders", "Cashier")" class="btn btn-outline-dark btn-sm"><i class="fas fa-arrow-left me-1"></i> Quay lại danh sách</a>
+        <button class="btn btn-danger btn-sm" onclick="window.print()"><i class="fas fa-print me-1"></i> In Hóa Đơn</button>
+    </div>
+
+    <!-- Khối cập nhật trạng thái -->
+    <div class="card p-3 mb-3 border shadow-sm bg-light">
+        <form method="post" action="@Url.Action("UpdateOrderStatus", "Cashier")" class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <input type="hidden" name="id" value="@Model.OrderId" />
+            <div>
+                <b class="text-dark small">Trạng thái hiện tại:</b>
+                <span class="badge bg-danger ms-1">@(Model.ShippingStatus ?? Model.OrderStatus)</span>
+            </div>
+            <div class="d-flex gap-2">
+                <select name="status" class="form-select form-select-sm" style="width: 220px;">
+                    <option value="Đang chuẩn bị món" @(Model.ShippingStatus == "Đang chuẩn bị món" ? "selected" : "")>👨‍🍳 Đang chuẩn bị món</option>
+                    <option value="Đang giao hàng" @(Model.ShippingStatus == "Đang giao hàng" ? "selected" : "")>🛵 Đang giao hàng</option>
+                    <option value="Đã giao thành công" @(Model.ShippingStatus == "Đã giao thành công" ? "selected" : "")>✅ Đã giao thành công</option>
+                    <option value="Hoàn tất" @(Model.OrderStatus == "Hoàn tất" ? "selected" : "")>⭐ Hoàn tất đơn</option>
+                    <option value="Đã hủy" @(Model.OrderStatus == "Đã hủy" ? "selected" : "")>❌ Đã hủy đơn</option>
+                </select>
+                <button type="submit" class="btn btn-dark btn-sm fw-bold">Lưu Thay Đổi</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Chi tiết đơn hàng -->
+    <div class="card p-4 border shadow-sm rounded-4">
+        <div class="text-center mb-4 border-bottom pb-3">
+            <h4 class="fw-bold text-danger mb-1">FASTFOOD EXPRESS</h4>
+            <div class="text-muted small">Số HĐ: <b class="font-monospace text-dark">@Model.OrderCode</b></div>
+            <div class="text-muted small">Thời gian: @Model.OrderDate.ToString("dd/MM/yyyy HH:mm:ss")</div>
+        </div>
+
+        <div class="row g-3 mb-3 small">
+            <div class="col-6">
+                <div><b>Khách hàng:</b> @(Model.CustomerName ?? "Khách lẻ")</div>
+                <div><b>Số điện thoại:</b> @(Model.CustomerPhone ?? "Chưa có")</div>
+            </div>
+            <div class="col-6 text-end">
+                <div><b>Hình thức:</b> @Model.PaymentMethod</div>
+                <div><b>Địa chỉ:</b> @(Model.ShippingAddress ?? "Tại quầy")</div>
+            </div>
+        </div>
+
+        <table class="table table-sm align-middle mb-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Món Ăn</th>
+                    <th class="text-center">SL</th>
+                    <th class="text-end">Đơn Giá</th>
+                    <th class="text-end">Thành Tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in details)
+                {
+                    <tr>
+                        <td><b>@(d.Product != null ? d.Product.ProductName : "Món ăn")</b></td>
+                        <td class="text-center">@d.Quantity</td>
+                        <td class="text-end">@d.UnitPrice.ToString("N0") đ</td>
+                        <td class="text-end fw-bold">@((d.UnitPrice * d.Quantity).ToString("N0")) đ</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="border-top pt-2 small">
+            <div class="d-flex justify-content-between mb-1">
+                <span>Tiền hàng:</span>
+                <b>@Model.SubTotal.ToString("N0") đ</b>
+            </div>
+            @if (Model.DiscountAmount > 0)
+            {
+                <div class="d-flex justify-content-between mb-1 text-danger">
+                    <span>Giảm trừ điểm:</span>
+                    <b>-@Model.DiscountAmount.ToString("N0") đ</b>
+                </div>
+            }
+            <div class="d-flex justify-content-between fs-5 fw-bold border-top pt-2 text-danger">
+                <span>TỔNG THANH TOÁN:</span>
+                <span>@Model.TotalAmount.ToString("N0") đ</span>
+            </div>
+        </div>
+    </div>
+</div>

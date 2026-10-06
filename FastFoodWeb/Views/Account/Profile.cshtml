@@ -1,0 +1,139 @@
+﻿@model FastFoodWeb.Models.User
+@{
+    ViewBag.Title = "Thông Tin Cá Nhân & Tài Khoản";
+    string error = ViewBag.Error as string;
+    string success = ViewBag.Success as string;
+    int points = ViewBag.Points != null ? (int)ViewBag.Points : 0;
+    string tier = ViewBag.Tier as string ?? "Đồng";
+}
+
+<div class="container py-4" style="max-width: 860px;">
+    <!-- BREADCRUMB -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a href="@Url.Action("Index", "Shop")" class="text-decoration-none text-muted">Trang Chủ Thực Đơn</a></li>
+            <li class="breadcrumb-item active text-danger fw-bold" aria-current="page">Hồ Sơ Cá Nhân</li>
+        </ol>
+    </nav>
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+            <i class="fas fa-circle-exclamation fs-5"></i>
+            <div>@error</div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(success))
+    {
+        <div class="alert alert-success py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+            <i class="fas fa-check-circle fs-5"></i>
+            <div>@success</div>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- CỘT 1: THẺ THÀNH VIÊN & ĐIỂM TÍCH LŨY -->
+        <div class="col-lg-4 col-md-5">
+            <div class="card p-4 text-center border-0 rounded-4 shadow-sm mb-3">
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle bg-danger text-white shadow-sm" style="width: 72px; height: 72px; font-size: 2rem;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h5 class="fw-bold mb-1 text-dark">@Model.FullName</h5>
+                <div class="small text-muted font-monospace mb-2">@@@Model.Username</div>
+                
+                <span class="badge bg-warning text-dark fw-bold px-3 py-2 rounded-pill fs-6 mb-3 shadow-sm">
+                    <i class="fas fa-crown text-danger me-1"></i> Hạng @tier
+                </span>
+
+                <div class="p-3 rounded-3 bg-light border text-start">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted">Điểm tích lũy:</span>
+                        <span class="fw-bold text-danger fs-5">@points đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center small text-muted">
+                        <span>Quy đổi giảm giá:</span>
+                        <span class="fw-bold text-success">@((points * 1000).ToString("N0")) đ</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 rounded-3 bg-white border small text-muted shadow-sm" style="line-height: 1.6;">
+                <div class="fw-bold text-dark mb-2"><i class="fas fa-shield-alt text-primary me-1"></i> Quyền Lợi Thành Viên:</div>
+                <ul class="mb-0 ps-3">
+                    <li>Mỗi <b>10.000 đ</b> mua hàng &rarr; Tích <b>1 điểm</b></li>
+                    <li><b>1 điểm</b> = <b>1.000 đ</b> giảm giá hóa đơn</li>
+                    <li>Được ưu tiên giao hàng nhanh và nhiều ưu đãi đặc quyền</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- CỘT 2: FORM CHỈNH SỬA THÔNG TIN CÁ NHÂN & MẬT KHẨU -->
+        <div class="col-lg-8 col-md-7">
+            <div class="card p-4 border-0 rounded-4 shadow-sm">
+                <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom">
+                    <i class="fas fa-user-pen text-danger me-2"></i>Chỉnh Sửa Thông Tin Cá Nhân
+                </h5>
+
+                <form method="post" action="@Url.Action("Profile", "Account")">
+                    <!-- THÔNG TIN CƠ BẢN -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-1">Họ và tên <span class="text-danger">*</span>:</label>
+                        <input type="text" class="form-control" name="fullName" value="@Model.FullName" required autocomplete="name" />
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-dark text-uppercase mb-1">Số điện thoại <span class="text-danger">*</span>:</label>
+                            <input type="tel" class="form-control" name="phone" value="@Model.PhoneNumber" required pattern="[0-9]{9,11}" />
+                            <small class="text-muted" style="font-size: 0.72rem;">Dùng nhận hàng và tích lũy điểm</small>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold text-dark text-uppercase mb-1">Email / Gmail <span class="text-danger">*</span>:</label>
+                            <input type="email" class="form-control" name="email" value="@Model.Email" required autocomplete="email" />
+                            <small class="text-muted" style="font-size: 0.72rem;">Dùng khôi phục mật khẩu qua OTP</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-1">Tên đăng nhập (Cố định):</label>
+                        <input type="text" class="form-control bg-light text-muted" value="@Model.Username" disabled readonly />
+                    </div>
+
+                    <!-- KHỐI ĐỔI MẬT KHẨU (TÙY CHỌN) -->
+                    <div class="p-3 mb-4 rounded-3 border bg-light">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+                            <span class="fw-bold text-dark small"><i class="fas fa-lock text-warning me-1"></i> Đổi Mật Khẩu (Nếu muốn thay đổi)</span>
+                            <small class="text-muted" style="font-size: 0.75rem;">Để trống nếu không đổi</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted text-uppercase mb-1">Mật khẩu hiện tại:</label>
+                            <input type="password" class="form-control bg-white" name="currentPassword" placeholder="Nhập mật khẩu cũ nếu đổi mật khẩu" autocomplete="current-password" />
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted text-uppercase mb-1">Mật khẩu mới:</label>
+                                <input type="password" class="form-control bg-white" name="newPassword" placeholder="Tối thiểu 3 ký tự" autocomplete="new-password" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted text-uppercase mb-1">Xác nhận mật khẩu mới:</label>
+                                <input type="password" class="form-control bg-white" name="confirmPassword" placeholder="Nhập lại mật khẩu mới" autocomplete="new-password" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <a href="@Url.Action("Index", "Shop")" class="btn btn-outline-secondary fw-semibold">
+                            <i class="fas fa-times me-1"></i> Quay lại
+                        </a>
+                        <button type="submit" class="btn btn-danger fw-bold shadow-sm">
+                            <i class="fas fa-floppy-disk me-1"></i> Lưu Thay Đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

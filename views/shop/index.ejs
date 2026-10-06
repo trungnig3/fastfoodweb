@@ -12,12 +12,12 @@
     <!-- Typography & Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <style>
         :root {
-            --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            --font-sans: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             --primary: #E11D48;
             --primary-hover: #BE123C;
             --primary-light: #FFF1F2;
@@ -743,6 +743,10 @@
             </a>
 
             <div class="d-flex align-items-center gap-2">
+                <button type="button" class="nav-btn-link text-danger fw-semibold border border-danger-subtle" onclick="openTrackOrderModal()">
+                    <i class="fas fa-truck-fast text-danger"></i>
+                    <span>Theo Dõi Đơn</span>
+                </button>
                 <button type="button" class="nav-btn-link text-warning fw-semibold border border-warning-subtle" onclick="openPointsModal()">
                     <i class="fas fa-coins text-warning"></i>
                     <span>Tra Cứu Điểm</span>
@@ -759,9 +763,10 @@
                     <span>Khiếu Nại / Góp Ý</span>
                 </button>
                 <% if (typeof user !== 'undefined' && user) { %>
-                    <span class="nav-btn-link text-dark fw-semibold">
+                    <a href="/Account/Profile" class="nav-btn-link text-dark fw-semibold" title="Xem & Sửa Thông Tin Cá Nhân">
                         <i class="fas fa-user-circle text-danger"></i> <%= user.FullName %>
-                    </span>
+                        <i class="fas fa-pen-to-square text-muted ms-1" style="font-size: 0.72rem;"></i>
+                    </a>
                     <a href="/Account/Logout" class="nav-btn-link text-danger" title="Đăng xuất">
                         <i class="fas fa-arrow-right-from-bracket"></i>
                         <span class="d-none d-sm-inline">Đăng xuất</span>
@@ -1050,10 +1055,15 @@
                     </div>
 
                     <div class="mb-2">
+                        <label class="form-label small fw-semibold text-muted text-uppercase mb-1" style="font-size: 0.75rem;">Họ tên người nhận (Tùy chọn):</label>
+                        <input type="text" class="form-control form-control-custom w-100 py-1" id="custName" placeholder="Tên của bạn..." value="<%= (typeof user !== 'undefined' && user) ? user.FullName : '' %>" />
+                    </div>
+
+                    <div class="mb-2">
                         <label class="form-label small fw-semibold text-muted text-uppercase mb-1" style="font-size: 0.75rem;">Địa chỉ giao hàng tận nơi <span class="text-danger">*</span>:</label>
                         <textarea class="form-control form-control-custom w-100 py-1" id="deliveryAddress" rows="2" 
-                                  placeholder="Nhập địa chỉ nhà & nhấn ra ngoài để tính phí ship..." 
-                                  onblur="calcDeliveryFee()"></textarea>
+                                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện..." 
+                                  oninput="onAddressChanged()"></textarea>
                         <div id="deliveryFeeStatus" class="small mt-1 fw-semibold"></div>
                     </div>
 
@@ -1067,7 +1077,7 @@
 
                     <!-- CHI TIẾT THANH TOÁN (TẠM TÍNH, SHIP, GIẢM TRỪ ĐIỂM, TỔNG) -->
                     <div class="pt-2 border-top">
-                        <div class="d-flex justify-content-between align-items-center mb-1 small text-muted" id="rowShipFee" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-1 small text-muted" id="rowShipFee">
                             <span>Phí vận chuyển:</span>
                             <span class="tabular-nums fw-semibold" id="cartShipFeeText">0 đ</span>
                         </div>
@@ -1245,6 +1255,113 @@
         </div>
     </footer>
 
+    <!-- MODAL THEO DÕI TRẠNG THÁI ĐƠN HÀNG (LIVE TRACKING 5P -> ĐANG GIAO -> ĐÃ GIAO) -->
+    <div class="modal fade" id="trackOrderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 620px;">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom py-3" style="background: linear-gradient(135deg, #1E293B, #0F172A); color: #fff;">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center bg-danger text-white" style="width: 40px; height: 40px;">
+                            <i class="fas fa-truck-fast fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="modal-title fw-bold text-white mb-0">Theo Dõi Trạng Thái Đơn Hàng</h6>
+                            <small class="text-white-50" style="font-size: 0.75rem;">Chuẩn bị món (5 phút) → Đang giao hàng → Đã giao thành công</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark text-uppercase mb-1">Nhập Mã Đơn Hàng Hoặc Số Điện Thoại:</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-muted"><i class="fas fa-search"></i></span>
+                            <input type="text" id="trackQueryInput" class="form-control form-control-custom" placeholder="Ví dụ: ONLINE... hoặc 0987654321" onkeypress="if(event.key === 'Enter') queryTrackOrder()" />
+                            <button type="button" class="btn btn-danger fw-bold px-3" onclick="queryTrackOrder()">
+                                <i class="fas fa-satellite-dish me-1"></i> Tra Cứu
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="trackLoadingState" class="text-center py-4 d-none">
+                        <i class="fas fa-spinner fa-spin fa-2x text-danger mb-2"></i>
+                        <div class="small text-muted">Đang cập nhật tiến trình đơn hàng...</div>
+                    </div>
+                    <div id="trackErrorAlert" class="alert alert-warning py-2 px-3 small rounded-3 d-none mb-3"></div>
+
+                    <div id="trackResultCard" class="d-none">
+                        <div class="p-3 rounded-3 mb-3 bg-light border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted small">Mã đơn: <b class="text-dark font-monospace" id="trackOrderCode">--</b></span>
+                                <span class="text-muted small" id="trackOrderDate">--</span>
+                            </div>
+                            <div class="fs-5 fw-bold text-danger mb-1" id="trackStatusTitle">Đang chuẩn bị món</div>
+                            <div class="small text-muted mb-2" id="trackStatusDesc">Đầu bếp đang chế biến các món ăn nóng hổi.</div>
+                            <div id="trackTimerBadgeWrap">
+                                <span class="badge bg-warning text-dark py-2 px-3 rounded-pill fw-bold" id="trackTimerBadge">
+                                    <i class="fas fa-stopwatch me-1"></i> <span id="trackTimerText">04:59</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- STEPPER 3 BƯỚC TIẾN TRÌNH -->
+                        <div class="position-relative mb-4 px-2">
+                            <div class="progress" style="height: 4px; position: absolute; top: 22px; left: 10%; right: 10%; z-index: 1;">
+                                <div class="progress-bar bg-danger" id="trackProgressBar" style="width: 33%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between text-center position-relative" style="z-index: 2;">
+                                <div style="width: 30%;">
+                                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" id="stepIcon1" style="width: 44px; height: 44px; background: #E11D48; color: #fff;">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <div class="fw-bold small mt-2 text-danger" id="stepText1">1. Đang Chuẩn Bị</div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">0 - 5 phút</small>
+                                </div>
+                                <div style="width: 30%;">
+                                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" id="stepIcon2" style="width: 44px; height: 44px; background: #E2E8F0; color: #64748B;">
+                                        <i class="fas fa-motorcycle"></i>
+                                    </div>
+                                    <div class="fw-bold small mt-2 text-muted" id="stepText2">2. Đang Giao Hàng</div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Sau 5 phút</small>
+                                </div>
+                                <div style="width: 30%;">
+                                    <div class="rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" id="stepIcon3" style="width: 44px; height: 44px; background: #E2E8F0; color: #64748B;">
+                                        <i class="fas fa-circle-check"></i>
+                                    </div>
+                                    <div class="fw-bold small mt-2 text-muted" id="stepText3">3. Đã Giao Hàng</div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Hoàn tất</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-3 bg-white border mb-3">
+                            <div class="row g-2 small">
+                                <div class="col-sm-6">
+                                    <span class="text-muted">Tài xế giao hàng:</span>
+                                    <div class="fw-bold text-dark"><i class="fas fa-user-tie text-danger me-1"></i> <span id="trackShipperName">Nguyễn Văn Giao</span></div>
+                                    <div class="text-muted small"><i class="fas fa-phone text-muted me-1"></i> <span id="trackShipperPhone">0901234567</span></div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <span class="text-muted">Địa chỉ nhận hàng:</span>
+                                    <div class="fw-semibold text-dark text-truncate" id="trackAddress">--</div>
+                                    <div class="text-muted small"><i class="fas fa-credit-card text-muted me-1"></i> <span id="trackPayMethod">Tiền mặt</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center small fw-bold text-dark mb-2">
+                                <span><i class="fas fa-list-check text-danger me-1"></i> Món Ăn Trong Đơn:</span>
+                                <span class="text-danger fs-6 tabular-nums" id="trackTotalAmount">0 đ</span>
+                            </div>
+                            <div id="trackItemsList" class="border rounded-2 p-2 bg-light" style="max-height: 140px; overflow-y: auto;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL TRA CỨU ĐIỂM THƯỞNG & HẠNG THÀNH VIÊN -->
     <div class="modal fade" id="pointsModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" style="max-width: 580px;">
@@ -1420,7 +1537,10 @@
                         </div>
                     </div>
 
-                    <button type="button" class="btn btn-brand-primary w-100 justify-content-center py-2" data-bs-dismiss="modal">
+                    <button type="button" class="btn btn-danger w-100 justify-content-center py-2 fw-bold mb-2 shadow-sm" onclick="trackFromSuccess()">
+                        <i class="fas fa-truck-fast me-1"></i> Theo Dõi Trực Tiếp Đơn Hàng Này
+                    </button>
+                    <button type="button" class="btn btn-brand-secondary w-100 justify-content-center py-2 fw-semibold" data-bs-dismiss="modal">
                         <i class="fas fa-utensils me-1"></i> Tiếp tục xem thực đơn
                     </button>
                 </div>

@@ -1,0 +1,93 @@
+﻿@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "Tổng Quan Hệ Thống";
+    var recentOrders = ViewBag.RecentOrders as IEnumerable<FastFoodWeb.Models.Order> ?? new List<FastFoodWeb.Models.Order>();
+    decimal totalRevenue = ViewBag.TotalRevenue != null ? (decimal)ViewBag.TotalRevenue : 0;
+    var prodsList = ViewBag.Products as IEnumerable<FastFoodWeb.Models.Product>;
+    int prodCount = prodsList != null ? prodsList.Count() : 8;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold mb-1 text-dark">Bảng Điều Khiển Quản Trị Hệ Thống</h4>
+        <p class="text-muted small mb-0">Báo cáo doanh thu, số lượng đơn hàng và tình hình hoạt động chuỗi cửa hàng</p>
+    </div>
+    <a href="@Url.Action("CreateProduct", "Admin")" class="btn btn-danger fw-bold"><i class="fas fa-plus me-1"></i> Thêm Món Mới</a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card p-3 border shadow-sm rounded-3">
+            <span class="text-muted small fw-bold">DOANH THU HOÀN TẤT</span>
+            <h3 class="fw-bold text-success mt-1">@totalRevenue.ToString("N0") đ</h3>
+            <small class="text-muted">Tổng tích lũy toàn hệ thống</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border shadow-sm rounded-3">
+            <span class="text-muted small fw-bold">TỔNG ĐƠN HÀNG</span>
+            <h3 class="fw-bold text-primary mt-1">@ViewBag.TotalOrders</h3>
+            <small class="text-success fw-bold">@ViewBag.CompletedOrders hoàn tất</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border shadow-sm rounded-3">
+            <span class="text-muted small fw-bold">KHÁCH HÀNG THÀNH VIÊN</span>
+            <h3 class="fw-bold text-warning mt-1">@ViewBag.TotalCustomers</h3>
+            <small class="text-muted">Hệ thống tích điểm tự động</small>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card p-3 border shadow-sm rounded-3">
+            <span class="text-muted small fw-bold">QUY MÔ MÓN ĂN</span>
+            <h3 class="fw-bold text-danger mt-1">@prodCount</h3>
+            <small class="text-muted">Đang kinh doanh trong kho</small>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng Đơn Hàng Gần Đây -->
+<div class="card border shadow-sm rounded-3">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-receipt text-danger me-2"></i>Đơn Hàng Mới Nhất</h6>
+        <a href="@Url.Action("Orders", "Admin")" class="btn btn-sm btn-outline-dark">Xem tất cả hóa đơn</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Mã Đơn</th>
+                    <th>Thời Gian</th>
+                    <th>Phương Thức</th>
+                    <th>Địa Chỉ</th>
+                    <th>Tổng Tiền</th>
+                    <th>Trạng Thái</th>
+                    <th class="text-end">Thao Tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in recentOrders)
+                {
+                    <tr>
+                        <td><b class="text-danger font-monospace">@o.OrderCode</b></td>
+                        <td class="small text-muted">@o.OrderDate.ToString("HH:mm:ss dd/MM")</td>
+                        <td><span class="badge bg-light text-dark border">@o.PaymentMethod</span></td>
+                        <td class="small text-truncate" style="max-width: 180px;">@(o.ShippingAddress ?? "Mua tại quầy")</td>
+                        <td><b class="text-dark">@o.TotalAmount.ToString("N0") đ</b></td>
+                        <td>
+                            <span class="badge @(o.OrderStatus == "Hoàn tất" ? "bg-success" : (o.OrderStatus == "Đã hủy" ? "bg-danger" : "bg-warning text-dark"))">
+                                @(o.ShippingStatus ?? o.OrderStatus)
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="@Url.Action("OrderDetails", "Admin", new { id = o.OrderId })" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-eye"></i> Chi tiết
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
