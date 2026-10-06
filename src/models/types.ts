@@ -105,6 +105,9 @@ export interface Review {
   Category: string; // "Chất lượng món ăn", "Tốc độ giao hàng", "Thái độ phục vụ", "Giá cả & Khuyến mãi", "Góp ý chung"
   Content: string;
   Reply?: string;
+  ReplyDate?: Date;
+  HelpfulYes?: number;
+  HelpfulNo?: number;
   Status?: string; // "Đã duyệt", "Chờ xử lý", "Đã phản hồi"
   CreatedAt: Date;
 }

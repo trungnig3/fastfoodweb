@@ -549,4 +549,15 @@ export class ShopController {
       reviews
     });
   }
+
+  // Khách hàng vote hữu ích (Có / Không) cho bài đánh giá
+  static voteReview(req: Request, res: Response) {
+    try {
+      const { id, isHelpful } = req.body;
+      const result = db.voteHelpful(Number(id), Boolean(isHelpful));
+      return res.json(result);
+    } catch (err: any) {
+      return res.json({ success: false, message: err.message });
+    }
+  }
 }

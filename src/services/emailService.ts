@@ -1,11 +1,29 @@
 import nodemailer from 'nodemailer';
 
-// Cấu hình gửi mail thông báo khiếu nại qua Gmail
-export const complaintTransporter = nodemailer.createTransport({
-  service: 'gmail',
+// Cấu hình gửi mail thông báo đánh giá & khiếu nại qua Gmail (Hỗ trợ SSL port 465 & TLS port 587)
+const transporterSSL = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: {
     user: 'vuductrung240305@gmail.com',
     pass: 'kfysxopqdwpfangr'
+  },
+  tls: {
+    rejectUnauthorized: false
+  }
+});
+
+const transporterTLS = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: 'vuductrung240305@gmail.com',
+    pass: 'kfysxopqdwpfangr'
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -21,11 +39,10 @@ export async function sendComplaintEmail(data: ComplaintEmailData): Promise<bool
   const { CustomerName, Phone, Rating, Category, Content } = data;
   const ratingStars = '⭐'.repeat(Rating || 5);
   
-  // Sử dụng Promise timeout tối đa 2.5s để đảm bảo không bao giờ làm treo luồng người dùng
-  const emailPromise = complaintTransporter.sendMail({
+  const mailOptions = {
     from: '"FastFood Express" <vuductrung240305@gmail.com>',
     to: 'vuductrung240305@gmail.com',
-    subject: `[FastFood POS] Đánh Giá / Góp Ý Mới (${ratingStars}) từ: ${CustomerName || 'Khách hàng'}`,
+    subject: `[FastFood POS] Đánh Giá & Góp Ý Mới (${ratingStars}) từ: ${CustomerName || 'Khách hàng'}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: #ffffff;">
         <div style="background: #e11d48; color: #ffffff; padding: 18px 24px;">
@@ -63,18 +80,22 @@ export async function sendComplaintEmail(data: ComplaintEmailData): Promise<bool
         </div>
       </div>
     `
-  });
-
-  const timeoutPromise = new Promise<boolean>((resolve) => {
-    setTimeout(() => resolve(false), 2500);
-  });
+  };
 
   try {
-    const res = await Promise.race([emailPromise.then(() => true), timeoutPromise]);
-    if (res) console.log('✅ Đã gửi email thông báo đánh giá thành công đến Admin');
-    return res;
-  } catch (err: any) {
-    console.warn('⚠️ Gửi email thông báo đánh giá chạy nền:', err?.message || err);
-    return false;
+    // Thử gửi qua SSL port 465 trước
+    await transporterSSL.sendMail(mailOptions);
+    console.log('✅ Đã gửi email thông báo đánh giá thành công qua SSL 465 đến', mailOptions.to);
+    return true;
+  } catch (err1: any) {
+    console.warn('⚠️ Lỗi gửi email qua SSL 465, đang thử lại qua TLS 587...', err1?.message || err1);
+    try {
+      await transporterTLS.sendMail(mailOptions);
+      console.log('✅ Đã gửi email thông báo đánh giá thành công qua TLS 587 đến', mailOptions.to);
+      return true;
+    } catch (err2: any) {
+      console.warn('⚠️ Lỗi gửi email qua TLS 587:', err2?.message || err2);
+      return false;
+    }
   }
 }

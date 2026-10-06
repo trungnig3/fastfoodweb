@@ -181,34 +181,44 @@ class Database {
   reviews: Review[] = [
     {
       ReviewId: 1,
-      CustomerName: 'Hoàng Anh Tuấn',
+      CustomerName: 'Dinh Pham',
       Phone: '0988776655',
       Rating: 5,
       Category: 'Chất lượng món ăn',
-      Content: 'Gà rán giòn cay ngon đỉnh chóp, da giòn rụm bên trong thịt mềm mọng nước không hề bị khô. Sẽ ủng hộ quán dài dài!',
-      Reply: 'FastFood Express cảm ơn bạn Tuấn rất nhiều ạ! Chúc bạn luôn có những bữa ăn thật ngon miệng cùng quán!',
+      Content: 'FastFood Express mọi người nhớ đặt đúng quán nha, gà rán giòn cay ngon đỉnh chóp, da giòn rụm bên trong thịt mềm mọng nước không hề bị khô. Xem thông tin menu rất chi tiết và đặt hàng siêu nhanh!',
+      Reply: 'Thưa Quý khách, rất cảm ơn Quý khách đã tin tưởng sử dụng các sản phẩm & dịch vụ của FastFood Express. Quán sẽ nỗ lực hoàn thiện và phục vụ bạn tốt hơn nữa!',
+      ReplyDate: new Date(Date.now() - 86400000 * 1),
+      HelpfulYes: 28,
+      HelpfulNo: 2,
       Status: 'Đã phản hồi',
       CreatedAt: new Date(Date.now() - 86400000 * 2)
     },
     {
       ReviewId: 2,
-      CustomerName: 'Trần Thu Hà',
+      CustomerName: 'Nguyễn văn trường “Nguyễn Đình Sơn”',
       Phone: '0912345678',
       Rating: 5,
       Category: 'Tốc độ giao hàng',
-      Content: 'Shipper giao hàng siêu nhanh, chỉ 20 phút là nhận được đồ ăn rồi. Món burger bò và khoai tây vẫn còn bốc khói nóng hổi.',
-      Reply: 'Dạ cảm ơn chị Hà đã tin tưởng dịch vụ giao hàng nhanh 30 phút của quán ạ!',
+      Content: 'Có thời gian thì ghé quán hoặc đặt ship về ngó thử nha, đồ ăn siêu ngon nóng hổi, shipper giao hàng chỉ tầm 20 phút. Trợ lý AI tư vấn và lên đơn tự động rất thông minh.',
+      Reply: 'Dạ cảm ơn anh Trường đã tin tưởng dịch vụ giao hàng nhanh 30 phút của quán ạ!',
+      ReplyDate: new Date(Date.now() - 86400000 * 0.8),
+      HelpfulYes: 15,
+      HelpfulNo: 1,
       Status: 'Đã phản hồi',
       CreatedAt: new Date(Date.now() - 86400000 * 1.5)
     },
     {
       ReviewId: 3,
-      CustomerName: 'Nguyễn Văn Minh',
+      CustomerName: 'Trần Thu Hà',
       Phone: '0903456789',
       Rating: 4,
       Category: 'Giá cả & Khuyến mãi',
       Content: 'Combo 2 ăn no nê mà giá 90k rất hợp lý. Điểm tích lũy lần trước trừ thẳng vào tiền bill hôm nay cực kỳ tiện lợi!',
-      Status: 'Đã duyệt',
+      Reply: 'FastFood Express trân trọng cảm ơn chị Hà, chúc chị có những bữa ăn thật ngon miệng!',
+      ReplyDate: new Date(Date.now() - 86400000 * 0.5),
+      HelpfulYes: 9,
+      HelpfulNo: 0,
+      Status: 'Đã phản hồi',
       CreatedAt: new Date(Date.now() - 86400000 * 1)
     },
     {
@@ -218,6 +228,8 @@ class Database {
       Rating: 5,
       Category: 'Thái độ phục vụ',
       Content: 'Nhân viên tư vấn nhiệt tình, đóng gói hộp sạch sẽ và chu đáo. Đầy đủ tương ớt, tương cà và khăn giấy.',
+      HelpfulYes: 12,
+      HelpfulNo: 0,
       Status: 'Đã duyệt',
       CreatedAt: new Date(Date.now() - 3600000 * 8)
     },
@@ -228,7 +240,10 @@ class Database {
       Rating: 1,
       Category: 'Tốc độ giao hàng',
       Content: 'Hôm nay đặt vào giờ cao điểm mưa gió shipper giao trễ 15 phút, cần cải thiện tốc độ giao vào giờ cao điểm nhé quán.',
-      Reply: 'Quán thành thật xin lỗi anh Long vì sự cố thời tiết khiến đơn giao chậm trễ. Quán xin phép gửi tặng anh voucher giảm giá cho lần đặt tiếp theo ạ!',
+      Reply: 'Quán thành thật xin lỗi anh Long vì sự cố thời tiết khiến đơn giao chậm trễ. Quán đã cải thiện tuyến đường và gửi tặng anh voucher giảm giá cho lần đặt tiếp theo ạ!',
+      ReplyDate: new Date(Date.now() - 3600000 * 2),
+      HelpfulYes: 5,
+      HelpfulNo: 3,
       Status: 'Đã phản hồi',
       CreatedAt: new Date(Date.now() - 3600000 * 3)
     }
@@ -554,6 +569,9 @@ class Database {
       Category: data.Category || 'Chất lượng món ăn',
       Content: (data.Content || '').trim(),
       Reply: data.Reply || '',
+      ReplyDate: data.Reply ? new Date() : undefined,
+      HelpfulYes: 0,
+      HelpfulNo: 0,
       Status: data.Status || (data.Reply ? 'Đã phản hồi' : 'Đã duyệt'),
       CreatedAt: new Date()
     };
@@ -564,6 +582,17 @@ class Database {
       ComplaintId: r.ReviewId
     });
     return r;
+  }
+
+  voteHelpful(id: number, isHelpful: boolean): { success: boolean; helpfulYes: number; helpfulNo: number } {
+    const r = this.reviews.find(item => item.ReviewId === id);
+    if (!r) return { success: false, helpfulYes: 0, helpfulNo: 0 };
+    if (isHelpful) {
+      r.HelpfulYes = (r.HelpfulYes || 0) + 1;
+    } else {
+      r.HelpfulNo = (r.HelpfulNo || 0) + 1;
+    }
+    return { success: true, helpfulYes: r.HelpfulYes || 0, helpfulNo: r.HelpfulNo || 0 };
   }
 
   addComplaint(data: any): Complaint {

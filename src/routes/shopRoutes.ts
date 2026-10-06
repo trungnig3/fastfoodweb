@@ -11,5 +11,6 @@ router.get('/Shop/PaymentCallback', ShopController.paymentCallback);
 router.post('/Shop/ChatBot', ShopController.chatBot);
 router.post(['/Shop/SendComplaint', '/Shop/SendReview', '/Shop/Feedback'], ShopController.sendComplaint);
 router.get(['/Shop/GetReviews', '/Shop/ReviewsData'], ShopController.getReviews);
+router.post('/Shop/VoteReview', ShopController.voteReview);
 
 export default router;

@@ -1139,6 +1139,146 @@
         </div>
     </div>
 
+    <!-- ==================== PHẦN ĐIỂM XẾP HẠNG & BÀI ĐÁNH GIÁ (CHUẨN THEO ẢNH GOOGLE PLAY STORE) ==================== -->
+    <section class="py-5 bg-white border-top border-bottom" id="ratingsAndReviewsSection">
+        <div class="container" style="max-width: 960px;">
+            <!-- Tiêu đề mục -->
+            <div class="d-flex align-items-center justify-content-between mb-1">
+                <div class="d-flex align-items-center gap-2">
+                    <h2 class="fs-4 fw-bold text-dark mb-0">Điểm xếp hạng và bài đánh giá</h2>
+                    <i class="fas fa-arrow-right fs-6 text-muted"></i>
+                </div>
+                <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-1 fw-semibold small" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                    <i class="fas fa-pen me-1"></i> Viết đánh giá
+                </button>
+            </div>
+            <p class="text-muted small mb-4" style="font-size: 0.82rem;">
+                Điểm xếp hạng và bài đánh giá đã được xác minh và do những người sử dụng cùng loại thiết bị với bạn đưa ra <i class="fas fa-circle-info ms-1 opacity-75"></i>
+            </p>
+
+            <!-- Khối tổng quan số sao & thanh tiến trình -->
+            <div class="row align-items-center g-4 mb-4 pb-3 border-bottom">
+                <div class="col-sm-4 text-center text-sm-start">
+                    <div class="display-3 fw-bold text-dark tabular-nums lh-1 mb-2" id="summaryAvgScore">
+                        <%= (reviewStats.avgFormatted || '4.8').replace('.', ',') %>
+                    </div>
+                    <div class="text-warning fs-5 mb-1" id="summaryStarIcons">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <div class="text-muted small" id="summaryTotalCount">
+                        <span class="fw-semibold"><%= (reviewStats.total || 5).toLocaleString('vi-VN') %></span> đánh giá • <span class="text-muted">616.585</span> lượt phục vụ
+                    </div>
+                </div>
+
+                <div class="col-sm-8">
+                    <div class="d-flex flex-column gap-2" id="ratingBarsContainer">
+                        <% [5, 4, 3, 2, 1].forEach(star => { %>
+                            <div class="d-flex align-items-center gap-2 small">
+                                <span class="text-muted fw-semibold" style="width: 14px; text-align: right;"><%= star %></span>
+                                <div class="progress flex-grow-1" style="height: 10px; border-radius: 999px; background-color: #E2E8F0;">
+                                    <div class="progress-bar" id="barStar<%= star %>" role="progressbar" style="width: <%= reviewStats.starPercentages[star] || 0 %>%; background-color: #0b57d0; border-radius: 999px;" aria-valuenow="<%= reviewStats.starPercentages[star] || 0 %>" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                <span class="text-muted tabular-nums" style="width: 40px; font-size: 0.75rem;" id="countStar<%= star %>">
+                                    <%= reviewStats.starCounts[star] || 0 %>
+                                </span>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thanh lọc đánh giá theo sao / phân loại -->
+            <div class="d-flex gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none" id="reviewFilterChips">
+                <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 py-1 fw-semibold review-filter-btn active" onclick="filterReviews('all', this)">Tất cả (<%= reviewStats.total %>)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold review-filter-btn" onclick="filterReviews(5, this)">5 sao ★ (<%= reviewStats.starCounts[5] || 0 %>)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold review-filter-btn" onclick="filterReviews(4, this)">4 sao ★ (<%= reviewStats.starCounts[4] || 0 %>)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold review-filter-btn" onclick="filterReviews(3, this)">3 sao ★ (<%= reviewStats.starCounts[3] || 0 %>)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold review-filter-btn" onclick="filterReviews(2, this)">2 sao ★ (<%= reviewStats.starCounts[2] || 0 %>)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold review-filter-btn" onclick="filterReviews(1, this)">1 sao ★ (<%= reviewStats.starCounts[1] || 0 %>)</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 fw-semibold review-filter-btn" onclick="filterReviews('replied', this)">Có phản hồi quán</button>
+            </div>
+
+            <!-- Danh sách các bài đánh giá (Cards) -->
+            <div class="d-flex flex-column gap-4" id="reviewCardsList">
+                <% recentReviews.forEach(r => { 
+                    const initial = (r.CustomerName || 'K').trim().charAt(0).toUpperCase();
+                    const colors = ['#0284c7', '#16a34a', '#d97706', '#9333ea', '#e11d48', '#0d9488'];
+                    const colorBg = colors[r.ReviewId % colors.length];
+                %>
+                    <div class="review-item border-bottom pb-4" data-rating="<%= r.Rating %>" data-has-reply="<%= r.Reply ? 'true' : 'false' %>">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px; background-color: <%= colorBg %>; font-size: 0.95rem;">
+                                    <%= initial %>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark small"><%= r.CustomerName %></div>
+                                    <div class="d-flex align-items-center gap-2 mt-0">
+                                        <div class="text-warning" style="font-size: 0.8rem;">
+                                            <% for(let i = 1; i <= 5; i++) { %>
+                                                <i class="fas fa-star <%= i <= r.Rating ? '' : 'text-muted opacity-25' %>"></i>
+                                            <% } %>
+                                        </div>
+                                        <span class="text-muted" style="font-size: 0.75rem;"><%= new Date(r.CreatedAt).toLocaleDateString('vi-VN') %></span>
+                                        <span class="badge bg-light text-muted border px-2 py-0" style="font-size: 0.7rem;"><%= r.Category || 'Góp ý' %></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-vertical"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm border small">
+                                    <li><a class="dropdown-item text-muted" href="javascript:void(0)"><i class="fas fa-flag me-1"></i> Báo cáo vi phạm</a></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Nội dung nhận xét -->
+                        <p class="text-secondary small mb-3 lh-base ps-1" style="font-size: 0.9rem;">
+                            <%= r.Content %>
+                        </p>
+
+                        <!-- Đánh giá này có hữu ích không? -->
+                        <div class="d-flex align-items-center gap-2 mb-3 ps-1 small text-muted" style="font-size: 0.8rem;">
+                            <span>Bài đánh giá này có hữu ích không?</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-0 fw-semibold" style="font-size: 0.78rem;" onclick="voteReviewHelpful(<%= r.ReviewId %>, true, this)">
+                                Có (<span id="voteYes_<%= r.ReviewId %>"><%= r.HelpfulYes || 0 %></span>)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-0 fw-semibold" style="font-size: 0.78rem;" onclick="voteReviewHelpful(<%= r.ReviewId %>, false, this)">
+                                Không (<span id="voteNo_<%= r.ReviewId %>"><%= r.HelpfulNo || 0 %></span>)
+                            </button>
+                        </div>
+
+                        <!-- Khối phản hồi chính thức từ cửa hàng (nếu có) -->
+                        <% if (r.Reply) { %>
+                            <div class="p-3 rounded-3 bg-light border-start border-3 border-primary ms-3" style="background-color: #F8FAFC;">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="fw-bold text-dark font-monospace" style="font-size: 0.78rem;">FASTFOOD EXPRESS VIỆT NAM</span>
+                                    <span class="text-muted" style="font-size: 0.75rem;"><%= r.ReplyDate ? new Date(r.ReplyDate).toLocaleDateString('vi-VN') : '25/09/2026' %></span>
+                                </div>
+                                <div class="text-muted small" style="font-size: 0.85rem; line-height: 1.5;">
+                                    <%= r.Reply %>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                <% }); %>
+            </div>
+
+            <!-- Nút tải thêm -->
+            <div class="text-center mt-4">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4 py-2 small fw-semibold" onclick="showShopToast('Đã hiển thị toàn bộ bài đánh giá mới nhất!', 'info')">
+                    Xem tất cả bài đánh giá & khiếu nại
+                </button>
+            </div>
+        </div>
+    </section>
+
     <!-- SHOP FOOTER -->
     <footer class="shop-footer">
         <!-- 1. Cam kết & Tiện ích (Highlights) -->
@@ -1481,31 +1621,76 @@
         </div>
     </div>
 
-    <!-- MODAL GỬI KHIẾU NẠI -->
+    <!-- MODAL GỬI KHIẾU NẠI & ĐÁNH GIÁ (INTERACTIVE RATING PICKER) -->
     <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-3 border-0 shadow">
-                <div class="modal-header border-bottom">
-                    <h6 class="modal-title fw-bold text-dark"><i class="fas fa-comment-dots text-danger me-2"></i>Gửi Khiếu Nại & Phản Ánh Dịch Vụ</h6>
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 520px;">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header border-bottom py-3 px-4 bg-light">
+                    <div>
+                        <h6 class="modal-title fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="fas fa-star text-warning"></i>
+                            <span>Đánh Giá & Khiếu Nại Dịch Vụ</span>
+                        </h6>
+                        <small class="text-muted" style="font-size: 0.75rem;">FastFood Express luôn lắng nghe mọi góp ý để hoàn thiện</small>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted text-uppercase">Họ và tên:</label>
-                        <input type="text" id="fbName" class="form-control form-control-custom w-100" placeholder="Nguyễn Văn A" />
+                    <!-- 1. Chọn mức sao -->
+                    <div class="text-center mb-4 p-3 bg-light rounded-3 border">
+                        <label class="form-label small fw-bold text-dark text-uppercase d-block mb-2">Mức độ hài lòng của bạn:</label>
+                        <div class="d-inline-flex align-items-center gap-2 fs-2 cursor-pointer" id="modalStarPicker">
+                            <i class="fas fa-star text-warning star-btn" data-star="1" onclick="setFeedbackRating(1)" onmouseenter="previewStars(1)" onmouseleave="resetPreviewStars()"></i>
+                            <i class="fas fa-star text-warning star-btn" data-star="2" onclick="setFeedbackRating(2)" onmouseenter="previewStars(2)" onmouseleave="resetPreviewStars()"></i>
+                            <i class="fas fa-star text-warning star-btn" data-star="3" onclick="setFeedbackRating(3)" onmouseenter="previewStars(3)" onmouseleave="resetPreviewStars()"></i>
+                            <i class="fas fa-star text-warning star-btn" data-star="4" onclick="setFeedbackRating(4)" onmouseenter="previewStars(4)" onmouseleave="resetPreviewStars()"></i>
+                            <i class="fas fa-star text-warning star-btn" data-star="5" onclick="setFeedbackRating(5)" onmouseenter="previewStars(5)" onmouseleave="resetPreviewStars()"></i>
+                        </div>
+                        <div class="fw-bold mt-1 text-primary small" id="ratingLabelText">5/5 sao - Cực kỳ hài lòng!</div>
+                        <input type="hidden" id="fbRating" value="5" />
                     </div>
+
+                    <!-- 2. Chọn chủ đề / danh mục -->
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted text-uppercase">Số điện thoại liên hệ:</label>
-                        <input type="tel" id="fbPhone" class="form-control form-control-custom w-100" placeholder="09xxxxxxxx" />
+                        <label class="form-label small fw-semibold text-muted text-uppercase mb-1">Chủ đề đánh giá / khiếu nại:</label>
+                        <div class="d-flex flex-wrap gap-2" id="fbCategoryChips">
+                            <button type="button" class="btn btn-sm btn-dark rounded-pill px-3 py-1 small category-chip active" onclick="setFeedbackCategory('Chất lượng món ăn', this)">🍔 Chất lượng món ăn</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 small category-chip" onclick="setFeedbackCategory('Tốc độ giao hàng', this)">🛵 Tốc độ giao hàng</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 small category-chip" onclick="setFeedbackCategory('Thái độ phục vụ', this)">👨‍🍳 Thái độ phục vụ</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 small category-chip" onclick="setFeedbackCategory('Giá cả & Khuyến mãi', this)">💰 Giá & Khuyến mãi</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 small category-chip" onclick="setFeedbackCategory('Khiếu nại dịch vụ', this)">⚠️ Khiếu nại dịch vụ</button>
+                        </div>
+                        <input type="hidden" id="fbCategory" value="Chất lượng món ăn" />
                     </div>
+
+                    <!-- 3. Thông tin người gửi -->
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted text-uppercase mb-1">Họ và tên:</label>
+                            <input type="text" id="fbName" class="form-control form-control-custom w-100" placeholder="Nguyễn Văn A" value="<%= typeof user !== 'undefined' && user ? user.FullName : '' %>" />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold text-muted text-uppercase mb-1">Số điện thoại:</label>
+                            <input type="tel" id="fbPhone" class="form-control form-control-custom w-100" placeholder="09xxxxxxxx" value="<%= typeof customerPhone !== 'undefined' ? customerPhone : '' %>" />
+                        </div>
+                    </div>
+
+                    <!-- 4. Nội dung -->
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold text-muted text-uppercase">Nội dung phản ánh:</label>
-                        <textarea id="fbContent" class="form-control form-control-custom w-100" rows="3" placeholder="Chất lượng món ăn, thời gian giao hàng hoặc thái độ nhân viên..."></textarea>
+                        <label class="form-label small fw-semibold text-muted text-uppercase mb-1">Nội dung chi tiết:</label>
+                        <textarea id="fbContent" class="form-control form-control-custom w-100" rows="3" placeholder="Chia sẻ trải nghiệm hương vị món ăn, shipper giao hàng hoặc góp ý để quán phục vụ tốt hơn..."></textarea>
+                    </div>
+
+                    <div class="p-2 rounded-2 bg-light border d-flex align-items-center gap-2 small text-muted" style="font-size: 0.75rem;">
+                        <i class="fas fa-envelope-circle-check text-primary fs-6"></i>
+                        <span>Đánh giá & khiếu nại sẽ được đồng bộ trực tiếp lên hệ thống và gửi email thông báo tới Quản trị viên.</span>
                     </div>
                 </div>
-                <div class="modal-footer border-top">
-                    <button type="button" class="btn-brand-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="button" class="btn-brand-primary" onclick="sendComplaint()">Gửi Phản Hồi</button>
+                <div class="modal-footer border-top bg-light py-2 px-4">
+                    <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-brand-primary rounded-pill px-4 fw-bold" id="btnSubmitFeedback" onclick="sendComplaint()">
+                        <i class="fas fa-paper-plane me-1"></i> Gửi Đánh Giá Ngay
+                    </button>
                 </div>
             </div>
         </div>
@@ -2497,36 +2682,222 @@
             }, 300);
         }
 
+        // ==================== ĐÁNH GIÁ & KHIẾU NẠI DỊCH VỤ (GOOGLE PLAY STORE STYLE) ====================
+        var currentFeedbackRating = 5;
+        var ratingLabels = {
+            1: '1/5 sao - Rất tệ (Cần quán cải thiện gấp!)',
+            2: '2/5 sao - Chưa hài lòng',
+            3: '3/5 sao - Bình thường / Ổn',
+            4: '4/5 sao - Hài lòng & ngon miệng',
+            5: '5/5 sao - Cực kỳ hài lòng & tuyệt vời! ✨'
+        };
+
+        function setFeedbackRating(star) {
+            currentFeedbackRating = star;
+            const input = document.getElementById('fbRating');
+            if (input) input.value = star;
+            const labelEl = document.getElementById('ratingLabelText');
+            if (labelEl) labelEl.textContent = ratingLabels[star] || (star + '/5 sao');
+            renderModalStars(star);
+        }
+
+        function previewStars(star) {
+            renderModalStars(star);
+            const labelEl = document.getElementById('ratingLabelText');
+            if (labelEl) labelEl.textContent = ratingLabels[star] || (star + '/5 sao');
+        }
+
+        function resetPreviewStars() {
+            renderModalStars(currentFeedbackRating);
+            const labelEl = document.getElementById('ratingLabelText');
+            if (labelEl) labelEl.textContent = ratingLabels[currentFeedbackRating] || (currentFeedbackRating + '/5 sao');
+        }
+
+        function renderModalStars(star) {
+            const stars = document.querySelectorAll('#modalStarPicker .star-btn');
+            stars.forEach(function(s, idx) {
+                if (idx < star) {
+                    s.className = 'fas fa-star text-warning star-btn';
+                } else {
+                    s.className = 'fas fa-star text-muted opacity-25 star-btn';
+                }
+            });
+        }
+
+        function setFeedbackCategory(cat, btnEl) {
+            const input = document.getElementById('fbCategory');
+            if (input) input.value = cat;
+            const chips = document.querySelectorAll('#fbCategoryChips .category-chip');
+            chips.forEach(function(c) {
+                c.classList.remove('btn-dark', 'active');
+                c.classList.add('btn-outline-secondary');
+            });
+            if (btnEl) {
+                btnEl.classList.remove('btn-outline-secondary');
+                btnEl.classList.add('btn-dark', 'active');
+            }
+        }
+
+        function filterReviews(filterType, btnEl) {
+            const buttons = document.querySelectorAll('#reviewFilterChips .review-filter-btn');
+            buttons.forEach(function(b) {
+                b.classList.remove('btn-dark', 'active');
+                b.classList.add('btn-outline-secondary');
+            });
+            if (btnEl) {
+                btnEl.classList.remove('btn-outline-secondary');
+                btnEl.classList.add('btn-dark', 'active');
+            }
+
+            const items = document.querySelectorAll('#reviewCardsList .review-item');
+            items.forEach(function(item) {
+                const itemRating = parseInt(item.getAttribute('data-rating') || '5', 10);
+                const hasReply = item.getAttribute('data-has-reply') === 'true';
+
+                if (filterType === 'all') {
+                    item.style.display = 'block';
+                } else if (filterType === 'replied') {
+                    item.style.display = hasReply ? 'block' : 'none';
+                } else {
+                    const targetStar = parseInt(filterType, 10);
+                    item.style.display = (itemRating === targetStar) ? 'block' : 'none';
+                }
+            });
+        }
+
+        function voteReviewHelpful(reviewId, isHelpful, btnEl) {
+            if (btnEl) btnEl.disabled = true;
+            fetch('/Shop/VoteReview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: reviewId, isHelpful: isHelpful })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                if (res.success) {
+                    const yesEl = document.getElementById('voteYes_' + reviewId);
+                    const noEl = document.getElementById('voteNo_' + reviewId);
+                    if (yesEl && res.helpfulYes !== undefined) yesEl.textContent = res.helpfulYes;
+                    if (noEl && res.helpfulNo !== undefined) noEl.textContent = res.helpfulNo;
+                    showShopToast('Cảm ơn bạn đã phản hồi tính hữu ích!', 'success');
+                }
+            })
+            .catch(function(err) {
+                console.error('Vote review error:', err);
+            });
+        }
+
         function sendComplaint() {
             const nameEl = document.getElementById('fbName');
             const phoneEl = document.getElementById('fbPhone');
             const contentEl = document.getElementById('fbContent');
+            const ratingEl = document.getElementById('fbRating');
+            const catEl = document.getElementById('fbCategory');
+
             const name = nameEl ? nameEl.value.trim() : '';
             const phone = phoneEl ? phoneEl.value.trim() : '';
             const content = contentEl ? contentEl.value.trim() : '';
-            if (!content) return showShopToast('Vui lòng nhập nội dung phản hồi!', 'warning');
+            const rating = ratingEl ? parseInt(ratingEl.value, 10) : 5;
+            const category = catEl ? catEl.value.trim() : 'Chất lượng món ăn';
+
+            if (!content && rating <= 3) {
+                return showShopToast('Vui lòng nhập nội dung góp ý để quán hoàn thiện dịch vụ nhé!', 'warning');
+            }
 
             const modalEl = document.getElementById('feedbackModal');
-            const submitBtn = modalEl ? modalEl.querySelector('.btn-brand-primary') : null;
+            const submitBtn = document.getElementById('btnSubmitFeedback');
             const originalText = submitBtn ? submitBtn.innerHTML : '';
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi mail...';
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi đánh giá...';
             }
 
             fetch('/Shop/SendComplaint', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ CustomerName: name, Phone: phone, Content: content })
+                body: JSON.stringify({
+                    CustomerName: name,
+                    Phone: phone,
+                    Content: content,
+                    Rating: rating,
+                    Category: category
+                })
             })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                showShopToast(data.message || 'Đã gửi phản hồi thành công!', 'success');
-                const modal = bootstrap.Modal.getInstance(document.getElementById('feedbackModal'));
-                if (modal) modal.hide();
-                if (contentEl) contentEl.value = '';
+                if (data.success) {
+                    showShopToast(data.message || 'Đã gửi đánh giá thành công!', 'success');
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                    if (contentEl) contentEl.value = '';
+
+                    // Cập nhật thẻ bài đánh giá mới ngay trên trang
+                    if (data.review) {
+                        const r = data.review;
+                        const initial = (r.CustomerName || 'K').trim().charAt(0).toUpperCase();
+                        let starsHtml = '';
+                        for (let i = 1; i <= 5; i++) {
+                            starsHtml += '<i class="fas fa-star ' + (i <= r.Rating ? '' : 'text-muted opacity-25') + '"></i>';
+                        }
+
+                        const newCardHtml = 
+                            '<div class="review-item border-bottom pb-4 animate__animated animate__fadeInDown" data-rating="' + r.Rating + '" data-has-reply="false">' +
+                                '<div class="d-flex align-items-center justify-content-between mb-2">' +
+                                    '<div class="d-flex align-items-center gap-3">' +
+                                        '<div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px; background-color: #0b57d0; font-size: 0.95rem;">' +
+                                            initial +
+                                        '</div>' +
+                                        '<div>' +
+                                            '<div class="fw-bold text-dark small">' + (r.CustomerName || 'Khách hàng') + ' <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" style="font-size: 0.65rem;">Vừa đăng</span></div>' +
+                                            '<div class="d-flex align-items-center gap-2 mt-0">' +
+                                                '<div class="text-warning" style="font-size: 0.8rem;">' + starsHtml + '</div>' +
+                                                '<span class="text-muted" style="font-size: 0.75rem;">Vừa xong</span>' +
+                                                '<span class="badge bg-light text-muted border px-2 py-0" style="font-size: 0.7rem;">' + (r.Category || 'Góp ý') + '</span>' +
+                                            '</div>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
+                                '<p class="text-secondary small mb-3 lh-base ps-1" style="font-size: 0.9rem;">' + (r.Content || 'Đánh giá ' + r.Rating + ' sao') + '</p>' +
+                                '<div class="d-flex align-items-center gap-2 mb-3 ps-1 small text-muted" style="font-size: 0.8rem;">' +
+                                    '<span>Bài đánh giá này có hữu ích không?</span>' +
+                                    '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-0 fw-semibold" style="font-size: 0.78rem;" onclick="voteReviewHelpful(' + r.ReviewId + ', true, this)">Có (<span id="voteYes_' + r.ReviewId + '">0</span>)</button>' +
+                                    '<button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-0 fw-semibold" style="font-size: 0.78rem;" onclick="voteReviewHelpful(' + r.ReviewId + ', false, this)">Không (<span id="voteNo_' + r.ReviewId + '">0</span>)</button>' +
+                                '</div>' +
+                            '</div>';
+
+                        const listEl = document.getElementById('reviewCardsList');
+                        if (listEl) {
+                            listEl.insertAdjacentHTML('afterbegin', newCardHtml);
+                        }
+                    }
+
+                    // Cập nhật số liệu thống kê nếu có
+                    if (data.stats) {
+                        const s = data.stats;
+                        const scoreEl = document.getElementById('summaryAvgScore');
+                        if (scoreEl) scoreEl.textContent = (s.avgFormatted || '5.0').replace('.', ',');
+                        const countEl = document.getElementById('summaryTotalCount');
+                        if (countEl) countEl.innerHTML = '<span class="fw-semibold">' + s.total.toLocaleString('vi-VN') + '</span> đánh giá • <span class="text-muted">616.585</span> lượt phục vụ';
+
+                        [5, 4, 3, 2, 1].forEach(function(star) {
+                            const bar = document.getElementById('barStar' + star);
+                            if (bar && s.starPercentages) {
+                                bar.style.width = (s.starPercentages[star] || 0) + '%';
+                            }
+                            const cnt = document.getElementById('countStar' + star);
+                            if (cnt && s.starCounts) {
+                                cnt.textContent = (s.starCounts[star] || 0);
+                            }
+                        });
+                    }
+                } else {
+                    showShopToast(data.message || 'Không thể gửi đánh giá!', 'warning');
+                }
             })
-            .catch(function() { showShopToast('Lỗi khi gửi phản hồi!', 'error'); })
+            .catch(function(err) {
+                console.error('Send complaint error:', err);
+                showShopToast('Lỗi khi gửi phản hồi!', 'error');
+            })
             .finally(function() {
                 if (submitBtn) {
                     submitBtn.disabled = false;

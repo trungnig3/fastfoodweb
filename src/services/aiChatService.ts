@@ -73,60 +73,74 @@ export async function handleChatBotMessage(
     noTone.includes('lay cho');
 
   if (hasOrderIntent) {
-    for (const prod of allProducts) {
-      const pNoTone = removeVietnameseTones(prod.ProductName);
-      let isMatched = false;
-      let qty = 1;
+    const isComboRequested = noTone.includes('combo') || noTone.includes('set ') || noTone.includes('set1') || noTone.includes('set2');
 
-      if (pNoTone.includes('combo 1') && (noTone.includes('combo 1') || noTone.includes('set 1'))) {
-        isMatched = true;
-        qty = extractQuantity('combo 1');
-      } else if (pNoTone.includes('combo 2') && (noTone.includes('combo 2') || noTone.includes('set 2'))) {
-        isMatched = true;
-        qty = extractQuantity('combo 2');
-      } else if (
-        pNoTone.includes('gia dinh') &&
-        (noTone.includes('gia dinh') || noTone.includes('combo gia dinh') || noTone.includes('combo 3'))
-      ) {
-        isMatched = true;
-        qty = extractQuantity('gia dinh');
-      } else if (
-        pNoTone.includes('ga ran') &&
-        (noTone.includes('ga ran') || noTone.includes('ga cay') || (noTone.includes('ga') && !noTone.includes('burger') && !noTone.includes('combo')))
-      ) {
-        isMatched = true;
-        qty = extractQuantity('ga');
-      } else if (
-        pNoTone.includes('burger') &&
-        (noTone.includes('burger') || noTone.includes('banh mi') || noTone.includes('bo pho mai'))
-      ) {
-        isMatched = true;
-        qty = extractQuantity('burger');
-      } else if (
-        pNoTone.includes('khoai tay') &&
-        (noTone.includes('khoai tay') || noTone.includes('khoai chien') || (noTone.includes('khoai') && !noTone.includes('combo')))
-      ) {
-        isMatched = true;
-        qty = extractQuantity('khoai');
-      } else if (
-        (pNoTone.includes('pepsi') || pNoTone.includes('nuoc ngot')) &&
-        (noTone.includes('pepsi') || noTone.includes('nuoc ngot') || noTone.includes('nuoc uong') || noTone.includes('coca') || (noTone.includes('nuoc') && !noTone.includes('khoai')))
-      ) {
-        isMatched = true;
-        qty = extractQuantity('pepsi');
-      } else if (
-        pNoTone.includes('sundae') &&
-        (noTone.includes('kem') || noTone.includes('sundae') || noTone.includes('dau tay'))
-      ) {
-        isMatched = true;
-        qty = extractQuantity('kem');
-      } else if (noTone.includes(pNoTone)) {
-        isMatched = true;
-        qty = 1;
+    // a. Xử lý các gói Combo
+    if (isComboRequested || noTone.includes('gia dinh')) {
+      if (noTone.includes('combo 1') || noTone.includes('set 1') || noTone.includes('set1')) {
+        const prod = allProducts.find(p => p.ProductId === 5 || p.ProductName.toLowerCase().includes('combo 1'));
+        if (prod) orderedItems.push({ product: prod, quantity: extractQuantity('combo 1') });
       }
+      if (noTone.includes('combo 2') || noTone.includes('set 2') || noTone.includes('set2')) {
+        const prod = allProducts.find(p => p.ProductId === 6 || p.ProductName.toLowerCase().includes('combo 2'));
+        if (prod) orderedItems.push({ product: prod, quantity: extractQuantity('combo 2') });
+      }
+      if (noTone.includes('gia dinh') || noTone.includes('combo 3') || noTone.includes('set 3')) {
+        const prod = allProducts.find(p => p.ProductId === 7 || p.ProductName.toLowerCase().includes('gia đình'));
+        if (prod) orderedItems.push({ product: prod, quantity: extractQuantity('gia dinh') });
+      }
+    }
 
-      if (isMatched && !orderedItems.some(x => x.product.ProductId === prod.ProductId)) {
-        orderedItems.push({ product: prod, quantity: qty });
+    // b. Xử lý các món lẻ (chỉ khi khách không yêu cầu combo hoặc muốn đặt kèm)
+    // Gà Rán Giòn Cay (ProductId: 1) - Chỉ nhận diện món lẻ khi KHÔNG có từ khóa 'combo'
+    if (
+      (noTone.includes('ga ran') || noTone.includes('ga cay') || (noTone.includes('ga') && !noTone.includes('burger'))) &&
+      !isComboRequested
+    ) {
+      const prod = allProducts.find(p => p.ProductId === 1 || p.ProductName.toLowerCase().includes('gà rán giòn cay'));
+      if (prod && !orderedItems.some(x => x.product.ProductId === prod.ProductId)) {
+        orderedItems.push({ product: prod, quantity: extractQuantity('ga') });
+      }
+    }
+
+    // Burger Bò Phô Mai (ProductId: 2)
+    if (
+      (noTone.includes('burger') || noTone.includes('bo pho mai') || noTone.includes('banh mi')) &&
+      !isComboRequested
+    ) {
+      const prod = allProducts.find(p => p.ProductId === 2 || p.ProductName.toLowerCase().includes('burger bò'));
+      if (prod && !orderedItems.some(x => x.product.ProductId === prod.ProductId)) {
+        orderedItems.push({ product: prod, quantity: extractQuantity('burger') });
+      }
+    }
+
+    // Khoai Tây Chiên (ProductId: 3)
+    if (
+      (noTone.includes('khoai tay') || noTone.includes('khoai chien') || noTone.includes('khoai')) &&
+      !isComboRequested
+    ) {
+      const prod = allProducts.find(p => p.ProductId === 3 || p.ProductName.toLowerCase().includes('khoai tây'));
+      if (prod && !orderedItems.some(x => x.product.ProductId === prod.ProductId)) {
+        orderedItems.push({ product: prod, quantity: extractQuantity('khoai') });
+      }
+    }
+
+    // Nước Ngọt Pepsi (ProductId: 4)
+    if (
+      (noTone.includes('pepsi') || noTone.includes('coca') || noTone.includes('nuoc ngot') || (noTone.includes('nuoc') && !noTone.includes('khoai'))) &&
+      !isComboRequested
+    ) {
+      const prod = allProducts.find(p => p.ProductId === 4 || p.ProductName.toLowerCase().includes('pepsi'));
+      if (prod && !orderedItems.some(x => x.product.ProductId === prod.ProductId)) {
+        orderedItems.push({ product: prod, quantity: extractQuantity('pepsi') });
+      }
+    }
+
+    // Kem Sundae Dâu Tây (ProductId: 8)
+    if (noTone.includes('kem') || noTone.includes('sundae') || noTone.includes('dau tay')) {
+      const prod = allProducts.find(p => p.ProductId === 8 || p.ProductName.toLowerCase().includes('sundae'));
+      if (prod && !orderedItems.some(x => x.product.ProductId === prod.ProductId)) {
+        orderedItems.push({ product: prod, quantity: extractQuantity('kem') });
       }
     }
 
