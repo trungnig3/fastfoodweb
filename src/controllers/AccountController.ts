@@ -382,11 +382,29 @@ export class AccountController {
     const points = cust ? cust.TotalPoints : 0;
     const tier = cust ? (cust.MembershipTier || db.calculateMembershipTier(points)) : 'Đồng';
 
+    const userPhoneClean = (user.PhoneNumber || '').replace(/[\s.-]/g, '');
+    const userOrders = db.orders
+      .filter(o => {
+        if (cust && o.CustomerId === cust.CustomerId) return true;
+        const oPhoneClean = (o.CustomerPhone || '').replace(/[\s.-]/g, '');
+        if (userPhoneClean && oPhoneClean === userPhoneClean) return true;
+        return false;
+      })
+      .sort((a, b) => new Date(b.OrderDate).getTime() - new Date(a.OrderDate).getTime())
+      .map(o => {
+        const details = db.getOrderDetails(o.OrderId);
+        return {
+          ...o,
+          Details: details
+        };
+      });
+
     res.render('account/profile', {
       user,
       customer: cust,
       points,
       tier,
+      orders: userOrders,
       error: null,
       success: null
     });

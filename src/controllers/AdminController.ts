@@ -225,21 +225,16 @@ export class AdminController {
     const status = req.body.status;
     const order = db.orders.find(o => o.OrderId === id);
     if (order) {
-      if (status === 'Đang chuẩn bị món') {
+      if (status === 'Đang chuẩn bị món' || status === 'Pending' || status === 'Đang xử lý') {
         order.OrderStatus = 'Đang xử lý';
         order.ShippingStatus = 'Đang chuẩn bị món';
-      } else if (status === 'Đang giao hàng') {
+      } else if (status === 'Đang giao hàng' || status === 'Đang giao') {
         order.OrderStatus = 'Đang giao';
         order.ShippingStatus = 'Đang giao hàng';
-      } else if (status === 'Đã giao thành công') {
+      } else if (status === 'Đã giao thành công' || status === 'Hoàn tất' || status === 'Đã hoàn thành' || status === 'Completed') {
         order.OrderStatus = 'Hoàn tất';
         order.ShippingStatus = 'Đã giao thành công';
-      } else if (status === 'Hoàn tất') {
-        order.OrderStatus = 'Hoàn tất';
-        if (!order.ShippingStatus || order.ShippingStatus === 'Đang chuẩn bị món') {
-          order.ShippingStatus = 'Đã giao thành công';
-        }
-      } else if (status === 'Đã hủy') {
+      } else if (status === 'Đã hủy' || status === 'Cancelled') {
         order.OrderStatus = 'Đã hủy';
         order.ShippingStatus = 'Đã hủy đơn';
         // Hoàn lại kho hàng nếu đơn bị hủy

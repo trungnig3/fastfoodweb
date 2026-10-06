@@ -2086,23 +2086,30 @@
         }
 
         // ==================== THEO DÕI ĐƠN HÀNG THỜI GIAN THỰC ====================
+        var activeTrackOrder = null;
+        var trackPollInterval = null;
+
         function openTrackOrderModal(prefillCode) {
             if (trackIntervalId) {
                 clearInterval(trackIntervalId);
                 trackIntervalId = null;
             }
+            if (trackPollInterval) {
+                clearInterval(trackPollInterval);
+                trackPollInterval = null;
+            }
             const phoneEl = document.getElementById('custPhone');
-            const query = prefillCode || (phoneEl ? phoneEl.value.trim() : '') || '';
+            const query = prefillCode || (phoneEl ? phoneEl.value.trim() : '') || (currentCustomerPhone || '');
             const input = document.getElementById('trackQueryInput');
             if (input && query) input.value = query;
             const modalEl = document.getElementById('trackOrderModal');
             if (modalEl) {
                 bootstrap.Modal.getOrCreateInstance(modalEl).show();
-                if (input && input.value.trim()) queryTrackOrder();
+                if (input && input.value.trim()) queryTrackOrder(false);
             }
         }
 
-        function queryTrackOrder() {
+        function queryTrackOrder(isSilent) {
             const queryInput = document.getElementById('trackQueryInput');
             const query = queryInput ? queryInput.value.trim() : '';
             const loading = document.getElementById('trackLoadingState');
@@ -2110,19 +2117,18 @@
             const resultCard = document.getElementById('trackResultCard');
 
             if (!query) {
-                alertBox.textContent = 'Vui lòng nhập mã đơn hàng hoặc số điện thoại!';
-                alertBox.classList.remove('d-none');
-                resultCard.classList.add('d-none');
+                if (!isSilent) {
+                    alertBox.textContent = 'Vui lòng nhập mã đơn hàng hoặc số điện thoại!';
+                    alertBox.classList.remove('d-none');
+                    resultCard.classList.add('d-none');
+                }
                 return;
             }
 
-            loading.classList.remove('d-none');
-            alertBox.classList.add('d-none');
-            resultCard.classList.add('d-none');
-
-            if (trackIntervalId) {
-                clearInterval(trackIntervalId);
-                trackIntervalId = null;
+            if (!isSilent) {
+                loading.classList.remove('d-none');
+                alertBox.classList.add('d-none');
+                resultCard.classList.add('d-none');
             }
 
             fetch('/Shop/TrackOrder?query=' + encodeURIComponent(query))
@@ -2130,20 +2136,27 @@
                 .then(function(data) {
                     loading.classList.add('d-none');
                     if (data.success && data.order) {
+                        alertBox.classList.add('d-none');
                         renderTrackUI(data.order);
                     } else {
-                        alertBox.textContent = data.message || 'Không tìm thấy thông tin đơn hàng!';
-                        alertBox.classList.remove('d-none');
+                        if (!isSilent) {
+                            alertBox.textContent = data.message || 'Không tìm thấy thông tin đơn hàng!';
+                            alertBox.classList.remove('d-none');
+                            resultCard.classList.add('d-none');
+                        }
                     }
                 })
                 .catch(function() {
                     loading.classList.add('d-none');
-                    alertBox.textContent = 'Lỗi kết nối máy chủ khi tra cứu đơn hàng!';
-                    alertBox.classList.remove('d-none');
+                    if (!isSilent) {
+                        alertBox.textContent = 'Lỗi kết nối máy chủ khi tra cứu đơn hàng!';
+                        alertBox.classList.remove('d-none');
+                    }
                 });
         }
 
         function renderTrackUI(order) {
+            activeTrackOrder = order;
             const resultCard = document.getElementById('trackResultCard');
             resultCard.classList.remove('d-none');
 
@@ -2163,16 +2176,37 @@
                 });
             }
 
-            trackCurrentSeconds = order.elapsedSeconds || 0;
-            updateTrackStep(trackCurrentSeconds);
+            if (trackIntervalId) {
+                clearInterval(trackIntervalId);
+                trackIntervalId = null;
+            }
 
-            trackIntervalId = setInterval(function() {
-                trackCurrentSeconds += 1;
-                updateTrackStep(trackCurrentSeconds);
-            }, 1000);
+            trackCurrentSeconds = order.elapsedSeconds || 0;
+            updateTrackDisplay(order, trackCurrentSeconds);
+
+            // Nếu đơn chưa hoàn tất hoặc chưa hủy thì cập nhật thời gian đếm tiến trình
+            if (!order.isCompleted && !order.isCancelled && order.step !== 3 && order.step !== 0) {
+                trackIntervalId = setInterval(function() {
+                    trackCurrentSeconds += 1;
+                    updateTrackDisplay(activeTrackOrder, trackCurrentSeconds);
+                }, 1000);
+            }
+
+            // Tự động làm mới đồng bộ trạng thái đơn hàng mỗi 4 giây nếu modal đang mở
+            if (!trackPollInterval) {
+                trackPollInterval = setInterval(function() {
+                    const modalEl = document.getElementById('trackOrderModal');
+                    if (modalEl && modalEl.classList.contains('show')) {
+                        queryTrackOrder(true);
+                    } else {
+                        clearInterval(trackPollInterval);
+                        trackPollInterval = null;
+                    }
+                }, 4000);
+            }
         }
 
-        function updateTrackStep(seconds) {
+        function updateTrackDisplay(order, seconds) {
             const step1Icon = document.getElementById('stepIcon1');
             const step2Icon = document.getElementById('stepIcon2');
             const step3Icon = document.getElementById('stepIcon3');
@@ -2187,73 +2221,117 @@
 
             if (!step1Icon || !titleEl) return;
 
-            if (seconds < 300) {
-                progressBar.style.width = '33%';
-                step1Icon.style.background = '#E11D48';
+            const isCancelled = order ? (order.isCancelled || order.orderStatus === 'Đã hủy' || order.orderStatus === 'Cancelled' || order.shippingStatus === 'Đã hủy đơn') : false;
+            const isCompleted = order ? (order.isCompleted || order.step === 3 || order.orderStatus === 'Hoàn tất' || order.orderStatus === 'Completed' || order.orderStatus === 'Đã hoàn thành' || order.shippingStatus === 'Đã giao thành công' || order.shippingStatus === 'Đã giao hàng') : false;
+            const isExplicitShipping = order ? (order.step === 2 || order.orderStatus === 'Đang giao' || order.shippingStatus === 'Đang giao hàng') : false;
+
+            if (isCancelled) {
+                progressBar.style.width = '100%';
+                progressBar.className = 'progress-bar bg-danger';
+                step1Icon.style.background = '#EF4444';
                 step1Icon.style.color = '#fff';
-                step1Text.className = 'fw-bold small mt-2 text-danger';
+                step1Icon.innerHTML = '<i class="fas fa-times"></i>';
+                step2Icon.style.background = '#EF4444';
+                step2Icon.style.color = '#fff';
+                step2Icon.innerHTML = '<i class="fas fa-times"></i>';
+                step3Icon.style.background = '#EF4444';
+                step3Icon.style.color = '#fff';
+                step3Icon.innerHTML = '<i class="fas fa-ban"></i>';
 
-                step2Icon.style.background = '#E2E8F0';
-                step2Icon.style.color = '#64748B';
+                step1Text.className = 'fw-bold small mt-2 text-muted';
                 step2Text.className = 'fw-bold small mt-2 text-muted';
+                step3Text.className = 'fw-bold small mt-2 text-danger';
 
-                step3Icon.style.background = '#E2E8F0';
-                step3Icon.style.color = '#64748B';
-                step3Text.className = 'fw-bold small mt-2 text-muted';
+                titleEl.textContent = 'Đơn hàng đã bị hủy';
+                titleEl.className = 'fs-5 fw-bold text-danger mb-1';
+                descEl.textContent = order.statusDesc || 'Đơn hàng này đã bị hủy.';
+                timerBadge.className = 'badge bg-danger text-white py-2 px-3 rounded-pill fw-bold';
+                timerText.innerHTML = '<i class="fas fa-ban me-1"></i> Đơn hàng đã hủy';
+                return;
+            }
 
-                const remain = 300 - seconds;
-                const min = Math.floor(remain / 60);
-                const sec = remain % 60;
-                const fmt = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
-
-                titleEl.textContent = 'Đang chuẩn bị món';
-                descEl.textContent = 'Đầu bếp đang chế biến các món ăn nóng hổi theo đơn của bạn.';
-                timerBadge.className = 'badge bg-warning text-dark py-2 px-3 rounded-pill fw-bold';
-                timerText.innerHTML = '<i class="fas fa-clock me-1"></i> Bếp đang làm món: chuyển giao hàng sau <b>' + fmt + '</b>';
-            } 
-            else if (seconds < 900) {
-                progressBar.style.width = '66%';
+            if (isCompleted) {
+                progressBar.style.width = '100%';
+                progressBar.className = 'progress-bar bg-success';
                 step1Icon.style.background = '#10B981';
                 step1Icon.style.color = '#fff';
-                step1Text.className = 'fw-bold small mt-2 text-success';
+                step1Icon.innerHTML = '<i class="fas fa-check"></i>';
+                step2Icon.style.background = '#10B981';
+                step2Icon.style.color = '#fff';
+                step2Icon.innerHTML = '<i class="fas fa-check"></i>';
+                step3Icon.style.background = '#10B981';
+                step3Icon.style.color = '#fff';
+                step3Icon.innerHTML = '<i class="fas fa-circle-check"></i>';
 
+                step1Text.className = 'fw-bold small mt-2 text-success';
+                step2Text.className = 'fw-bold small mt-2 text-success';
+                step3Text.className = 'fw-bold small mt-2 text-success';
+
+                titleEl.textContent = 'Đã Hoàn Tất / Giao Hàng Thành Công';
+                titleEl.className = 'fs-5 fw-bold text-success mb-1';
+                descEl.textContent = 'Đơn hàng đã được hoàn tất và giao thành công. Chúc bạn có bữa ăn thật ngon miệng!';
+                timerBadge.className = 'badge bg-success text-white py-2 px-3 rounded-pill fw-bold';
+                timerText.innerHTML = '<i class="fas fa-circle-check me-1"></i> Đã hoàn thành đơn hàng';
+                return;
+            }
+
+            if (isExplicitShipping || (seconds >= 300 && seconds < 900)) {
+                progressBar.style.width = '66%';
+                progressBar.className = 'progress-bar bg-primary';
+                step1Icon.style.background = '#10B981';
+                step1Icon.style.color = '#fff';
+                step1Icon.innerHTML = '<i class="fas fa-check"></i>';
                 step2Icon.style.background = '#0284C7';
                 step2Icon.style.color = '#fff';
-                step2Text.className = 'fw-bold small mt-2 text-primary';
-
+                step2Icon.innerHTML = '<i class="fas fa-motorcycle"></i>';
                 step3Icon.style.background = '#E2E8F0';
                 step3Icon.style.color = '#64748B';
+                step3Icon.innerHTML = '<i class="fas fa-circle-check"></i>';
+
+                step1Text.className = 'fw-bold small mt-2 text-success';
+                step2Text.className = 'fw-bold small mt-2 text-primary';
                 step3Text.className = 'fw-bold small mt-2 text-muted';
 
-                const remain = 900 - seconds;
+                const remain = Math.max(0, 900 - seconds);
                 const min = Math.floor(remain / 60);
                 const sec = remain % 60;
                 const fmt = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
 
-                titleEl.textContent = 'Đang giao hàng';
+                titleEl.textContent = 'Đang Giao Hàng';
+                titleEl.className = 'fs-5 fw-bold text-primary mb-1';
                 descEl.textContent = 'Tài xế đang di chuyển giao hàng đến địa chỉ của bạn.';
                 timerBadge.className = 'badge bg-primary text-white py-2 px-3 rounded-pill fw-bold';
                 timerText.innerHTML = '<i class="fas fa-motorcycle me-1"></i> Đang giao hàng: dự kiến đến nơi sau <b>' + fmt + '</b>';
-            } 
-            else {
-                progressBar.style.width = '100%';
-                step1Icon.style.background = '#10B981';
-                step1Icon.style.color = '#fff';
-                step1Text.className = 'fw-bold small mt-2 text-success';
-
-                step2Icon.style.background = '#10B981';
-                step2Icon.style.color = '#fff';
-                step2Text.className = 'fw-bold small mt-2 text-success';
-
-                step3Icon.style.background = '#10B981';
-                step3Icon.style.color = '#fff';
-                step3Text.className = 'fw-bold small mt-2 text-success';
-
-                titleEl.textContent = 'Đã giao hàng thành công';
-                descEl.textContent = 'Đơn hàng đã được giao tận nơi. Chúc bạn có bữa ăn thật ngon miệng!';
-                timerBadge.className = 'badge bg-success text-white py-2 px-3 rounded-pill fw-bold';
-                timerText.innerHTML = '<i class="fas fa-circle-check me-1"></i> Đã hoàn tất giao hàng';
+                return;
             }
+
+            // Mặc định: Đang chuẩn bị món (Bước 1)
+            progressBar.style.width = '33%';
+            progressBar.className = 'progress-bar bg-danger';
+            step1Icon.style.background = '#E11D48';
+            step1Icon.style.color = '#fff';
+            step1Icon.innerHTML = '<i class="fas fa-utensils"></i>';
+            step2Icon.style.background = '#E2E8F0';
+            step2Icon.style.color = '#64748B';
+            step2Icon.innerHTML = '<i class="fas fa-motorcycle"></i>';
+            step3Icon.style.background = '#E2E8F0';
+            step3Icon.style.color = '#64748B';
+            step3Icon.innerHTML = '<i class="fas fa-circle-check"></i>';
+
+            step1Text.className = 'fw-bold small mt-2 text-danger';
+            step2Text.className = 'fw-bold small mt-2 text-muted';
+            step3Text.className = 'fw-bold small mt-2 text-muted';
+
+            const remainPrep = Math.max(0, 300 - seconds);
+            const minPrep = Math.floor(remainPrep / 60);
+            const secPrep = remainPrep % 60;
+            const fmtPrep = (minPrep < 10 ? '0' : '') + minPrep + ':' + (secPrep < 10 ? '0' : '') + secPrep;
+
+            titleEl.textContent = 'Đang Chuẩn Bị Món';
+            titleEl.className = 'fs-5 fw-bold text-danger mb-1';
+            descEl.textContent = 'Đầu bếp đang chế biến các món ăn nóng hổi theo đơn của bạn.';
+            timerBadge.className = 'badge bg-warning text-dark py-2 px-3 rounded-pill fw-bold';
+            timerText.innerHTML = '<i class="fas fa-clock me-1"></i> Bếp đang làm món: chuyển giao hàng sau <b>' + fmtPrep + '</b>';
         }
 
         function trackFromSuccess() {
@@ -2397,6 +2475,14 @@
         }
 
         window.addEventListener('DOMContentLoaded', function() {
+            const savedTrackCode = localStorage.getItem('fastfood_track_code');
+            if (savedTrackCode) {
+                localStorage.removeItem('fastfood_track_code');
+                setTimeout(function() {
+                    openTrackOrderModal(savedTrackCode);
+                }, 300);
+            }
+
             const phoneEl = document.getElementById('custPhone');
             const phone = phoneEl ? phoneEl.value.trim() : '';
             if (phone && phone.length >= 9) {

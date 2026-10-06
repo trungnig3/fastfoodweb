@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -137,7 +137,36 @@ namespace FastFoodWeb.Controllers
             string statusTitle = "Đang chuẩn bị món";
             string statusDesc = "Đầu bếp đang chế biến món ăn nóng hổi theo đơn của bạn.";
 
-            if (order.OrderStatus != "Đã hủy" && order.OrderStatus != "Cancelled")
+            bool isCancelled = order.OrderStatus == "Đã hủy" || order.OrderStatus == "Cancelled" || order.ShippingStatus == "Đã hủy đơn";
+            bool isCompleted = order.OrderStatus == "Hoàn tất" || order.OrderStatus == "Completed" || order.OrderStatus == "Đã hoàn thành" || order.ShippingStatus == "Đã giao thành công" || order.ShippingStatus == "Đã giao hàng";
+            bool isShippingExplicit = order.ShippingStatus == "Đang giao hàng" || order.OrderStatus == "Đang giao";
+            bool isPreparingExplicit = order.ShippingStatus == "Đang chuẩn bị món" || order.OrderStatus == "Đang xử lý";
+
+            if (isCancelled)
+            {
+                step = 0;
+                statusTitle = "Đơn hàng đã hủy";
+                statusDesc = "Đơn hàng này đã bị hủy theo yêu cầu hoặc quá hạn thanh toán.";
+            }
+            else if (isCompleted)
+            {
+                step = 3;
+                statusTitle = "Đã hoàn thành / Giao thành công";
+                statusDesc = "Đơn hàng đã được hoàn tất và giao thành công. Chúc bạn ngon miệng!";
+            }
+            else if (isShippingExplicit)
+            {
+                step = 2;
+                statusTitle = "Đang giao hàng";
+                statusDesc = "Shipper đang trên đường giao hàng đến địa chỉ của bạn.";
+            }
+            else if (isPreparingExplicit)
+            {
+                step = 1;
+                statusTitle = "Đang chuẩn bị món";
+                statusDesc = $"Bếp đang chuẩn bị món. Dự kiến chuyển sang giao hàng trong {Math.Max(1, Math.Ceiling((300 - (elapsedSeconds % 300)) / 60))} phút.";
+            }
+            else
             {
                 if (elapsedSeconds < 300)
                 {
@@ -152,22 +181,15 @@ namespace FastFoodWeb.Controllers
                     statusTitle = "Đang giao hàng";
                     statusDesc = "Shipper đang trên đường giao hàng đến địa chỉ của bạn.";
                     order.ShippingStatus = "Đang giao hàng";
-                    if (order.OrderStatus == "Pending") order.OrderStatus = "Processing";
                 }
                 else
                 {
                     step = 3;
-                    statusTitle = "Đã giao hàng thành công";
+                    statusTitle = "Đã hoàn thành / Giao thành công";
                     statusDesc = "Đơn hàng đã được giao tận nơi. Chúc bạn ngon miệng!";
-                    order.ShippingStatus = "Đã giao hàng";
+                    order.ShippingStatus = "Đã giao thành công";
                     order.OrderStatus = "Hoàn tất";
                 }
-            }
-            else
-            {
-                step = 0;
-                statusTitle = "Đơn hàng đã hủy";
-                statusDesc = "Đơn hàng này đã bị hủy.";
             }
 
             var details = _db.GetOrderDetails(order.OrderId).Select(d => new
