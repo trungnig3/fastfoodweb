@@ -198,6 +198,7 @@ class Database {
       OrderCode: 'HD' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '1001',
       CashierId: 2,
       CustomerId: 1,
+      CustomerPhone: '0987654321',
       OrderDate: new Date(Date.now() - 3600000 * 4),
       OrderStatus: 'Hoàn tất',
       PaymentMethod: 'Tiền mặt',
@@ -213,21 +214,23 @@ class Database {
 
     const order2: Order = {
       OrderId: this.nextOrderId++,
-      OrderCode: 'ONLINE' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '1002',
+      OrderCode: 'ONLINE' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '7842',
       CashierId: 1,
-      OrderDate: new Date(Date.now() - 3600000 * 2),
-      OrderStatus: 'Hoàn tất',
-      PaymentMethod: 'VNPAY QR',
-      SubTotal: 90000,
-      TotalAmount: 105000,
-      ShippingAddress: '123 Đường Cầu Giấy, Hà Nội',
-      ShipperName: 'Nguyễn Văn Giao',
-      ShipperPhone: '0901234567',
+      CustomerId: 1,
+      CustomerPhone: '0987654321',
+      OrderDate: new Date(Date.now() - 75 * 1000), // Đặt 75 giây trước (đang trong 5 phút chuẩn bị)
+      OrderStatus: 'Processing',
+      PaymentMethod: 'COD',
+      SubTotal: 55000,
+      TotalAmount: 55000,
+      ShippingAddress: 'hn',
+      ShipperName: 'Lê Hoàng Tốc Độ',
+      ShipperPhone: '0987654321',
       ShippingStatus: 'Đang chuẩn bị món'
     };
     this.orders.push(order2);
     this.orderDetails.push(
-      { DetailId: this.nextDetailId++, OrderId: order2.OrderId, ProductId: 6, Quantity: 1, UnitPrice: 90000 }
+      { DetailId: this.nextDetailId++, OrderId: order2.OrderId, ProductId: 2, Quantity: 1, UnitPrice: 55000 }
     );
 
     // Seed completed past shift for salary calculation demonstration

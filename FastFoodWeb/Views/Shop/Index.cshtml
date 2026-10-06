@@ -16,11 +16,11 @@
         </a>
 
         <div class="d-flex align-items-center gap-2">
-            <button type="button" class="btn btn-outline-danger btn-sm fw-bold border-danger-subtle" onclick="openTrackOrderModal()">
+            <button type="button" class="btn btn-outline-danger btn-sm fw-bold border-danger-subtle" data-bs-toggle="modal" data-bs-target="#trackOrderModal" onclick="openTrackOrderModal()">
                 <i class="fas fa-truck-fast text-danger me-1"></i>
                 <span>Theo Dõi Đơn</span>
             </button>
-            <button type="button" class="btn btn-outline-warning text-dark btn-sm fw-bold border-warning-subtle" onclick="openPointsModal()">
+            <button type="button" class="btn btn-outline-warning text-dark btn-sm fw-bold border-warning-subtle" data-bs-toggle="modal" data-bs-target="#pointsModal" onclick="openPointsModal()">
                 <i class="fas fa-coins text-warning me-1"></i>
                 <span>Tra Cứu Điểm</span>
                 @if (ViewBag.CustomerPoints > 0)

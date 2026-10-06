@@ -130,21 +130,28 @@ export class ShopController {
 
   // Tra cứu & theo dõi tiến trình đơn hàng (tự động chuyển: 5p -> đang giao, 15p -> đã giao)
   static trackOrder(req: Request, res: Response) {
-    const query = ((req.query.query as string) || '').trim();
-    if (!query) {
+    const rawQuery = ((req.query.query as string) || '').trim();
+    if (!rawQuery) {
       return res.json({ success: false, message: 'Vui lòng nhập mã đơn hàng hoặc số điện thoại!' });
     }
+
+    const queryClean = rawQuery.replace(/[\s.-]/g, '').toLowerCase();
+    const cust = db.getCustomerByPhone(queryClean);
 
     const order = db.orders
       .slice()
       .reverse()
-      .find(o => 
-        o.OrderCode.toLowerCase() === query.toLowerCase() || 
-        (o.CustomerPhone && o.CustomerPhone.trim() === query)
-      );
+      .find(o => {
+        const orderCodeClean = (o.OrderCode || '').replace(/[\s.-]/g, '').toLowerCase();
+        const phoneClean = (o.CustomerPhone || '').replace(/[\s.-]/g, '');
+        if (orderCodeClean === queryClean || orderCodeClean.includes(queryClean) || queryClean.includes(orderCodeClean)) return true;
+        if (phoneClean && phoneClean === queryClean) return true;
+        if (cust && o.CustomerId === cust.CustomerId) return true;
+        return false;
+      });
 
     if (!order) {
-      return res.json({ success: false, message: `Không tìm thấy đơn hàng nào khớp với "${query}".` });
+      return res.json({ success: false, message: `Không tìm thấy đơn hàng nào khớp với "${rawQuery}".` });
     }
 
     const elapsedSeconds = (Date.now() - new Date(order.OrderDate).getTime()) / 1000;
