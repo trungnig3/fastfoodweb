@@ -1561,7 +1561,7 @@
     <!-- FLOATING TOASTS -->
     <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;" id="shopToastContainer"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         let cart = [];
@@ -1571,19 +1571,21 @@
         let pointsToUse = 0;
         let isUsingPoints = false;
         let phoneCheckTimeout = null;
+        let trackIntervalId = null;
+        let trackCurrentSeconds = 0;
 
         function formatMoney(amount) {
-            return Number(amount).toLocaleString('vi-VN') + ' đ';
+            return Number(amount).toLocaleString("vi-VN") + " đ";
         }
 
         // ==================== TRA CỨU & DÙNG ĐIỂM THÀNH VIÊN ====================
         function openPointsModal(prefillPhone) {
-            const phone = prefillPhone || document.getElementById('custPhone')?.value.trim() || '<%= customerPhone %>';
-            const input = document.getElementById('lookupPhoneInput');
+            const phone = prefillPhone || document.getElementById("custPhone")?.value.trim() || "<%= customerPhone %>";
+            const input = document.getElementById("lookupPhoneInput");
             if (input && phone) {
                 input.value = phone;
             }
-            const modalEl = document.getElementById('pointsModal');
+            const modalEl = document.getElementById("pointsModal");
             if (modalEl) {
                 const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
                 modal.show();
@@ -1594,203 +1596,153 @@
         }
 
         function queryPointsFromModal() {
-            const phone = document.getElementById('lookupPhoneInput')?.value.trim() || '';
-            const loading = document.getElementById('pointsLoadingState');
-            const alertBox = document.getElementById('pointsErrorAlert');
-            const resultCard = document.getElementById('pointsResultCard');
-            const policyBox = document.getElementById('pointsPolicyBox');
+            const phone = document.getElementById("lookupPhoneInput")?.value.trim() || "";
+            const loading = document.getElementById("pointsLoadingState");
+            const alertBox = document.getElementById("pointsErrorAlert");
+            const resultCard = document.getElementById("pointsResultCard");
 
             if (!phone) {
-                alertBox.textContent = 'Vui lòng nhập số điện thoại thành viên cần tra cứu!';
-                alertBox.classList.remove('d-none');
-                resultCard.classList.add('d-none');
+                alertBox.textContent = "Vui lòng nhập số điện thoại thành viên cần tra cứu!";
+                alertBox.classList.remove("d-none");
+                resultCard.classList.add("d-none");
                 return;
             }
 
-            loading.classList.remove('d-none');
-            alertBox.classList.add('d-none');
-            resultCard.classList.add('d-none');
-            policyBox.classList.add('d-none');
+            loading.classList.remove("d-none");
+            alertBox.classList.add("d-none");
+            resultCard.classList.add("d-none");
 
-            fetch('/Shop/GetCustomerPoints?phone=' + encodeURIComponent(phone))
+            fetch("/Shop/GetCustomerPoints?phone=" + encodeURIComponent(phone))
                 .then(r => r.json())
                 .then(data => {
-                    loading.classList.add('d-none');
+                    loading.classList.add("d-none");
                     if (data.success && data.customer) {
                         const cust = data.customer;
                         currentCustomer = cust;
-                        document.getElementById('resCustName').textContent = cust.name || 'Khách hàng';
-                        document.getElementById('resCustPhone').textContent = cust.phone;
-                        document.getElementById('resCustTier').textContent = cust.tier || 'Đồng';
-                        document.getElementById('resCustPoints').textContent = cust.points || 0;
-                        document.getElementById('resCustValue').textContent = formatMoney(cust.discountValue || (cust.points * 1000));
+                        document.getElementById("resCustName").textContent = cust.name || "Khách hàng";
+                        document.getElementById("resCustPhone").textContent = cust.phone;
+                        document.getElementById("resCustTier").textContent = cust.tier || "Đồng";
+                        document.getElementById("resCustPoints").textContent = cust.points || 0;
+                        document.getElementById("resCustValue").textContent = formatMoney(cust.discountValue || (cust.points * 1000));
 
-                        // Tier badge styling
-                        const tierBadge = document.getElementById('resCustTierBadge');
+                        const tierBadge = document.getElementById("resCustTierBadge");
                         if (tierBadge) {
-                            if (cust.tier === 'Kim Cương') tierBadge.className = 'badge bg-info text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
-                            else if (cust.tier === 'Vàng') tierBadge.className = 'badge bg-warning text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
-                            else if (cust.tier === 'Bạc') tierBadge.className = 'badge bg-secondary text-white fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
-                            else tierBadge.className = 'badge bg-light text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm';
+                            if (cust.tier === "Kim Cương") tierBadge.className = "badge bg-info text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm";
+                            else if (cust.tier === "Vàng") tierBadge.className = "badge bg-warning text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm";
+                            else if (cust.tier === "Bạc") tierBadge.className = "badge bg-secondary text-white fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm";
+                            else tierBadge.className = "badge bg-light text-dark fw-bold px-3 py-2 fs-6 rounded-pill shadow-sm";
                         }
 
-                        // Next tier calculation
                         const p = cust.points || 0;
-                        let nextDesc = '';
+                        let nextDesc = "";
                         let progress = 0;
                         if (p < 50) {
-                            nextDesc = 'Cần thêm ' + (50 - p) + ' điểm để lên Bạc (50đ)';
+                            nextDesc = "Cần thêm " + (50 - p) + " điểm để lên Bạc (50đ)";
                             progress = Math.min(100, Math.round((p / 50) * 100));
                         } else if (p < 150) {
-                            nextDesc = 'Cần thêm ' + (150 - p) + ' điểm để lên Vàng (150đ)';
+                            nextDesc = "Cần thêm " + (150 - p) + " điểm để lên Vàng (150đ)";
                             progress = Math.min(100, Math.round(((p - 50) / 100) * 100));
                         } else if (p < 300) {
-                            nextDesc = 'Cần thêm ' + (300 - p) + ' điểm để lên Kim Cương (300đ)';
+                            nextDesc = "Cần thêm " + (300 - p) + " điểm để lên Kim Cương (300đ)";
                             progress = Math.min(100, Math.round(((p - 150) / 150) * 100));
                         } else {
-                            nextDesc = 'Bạn đang là thành viên VIP Kim Cương!';
+                            nextDesc = "Đã đạt hạng tối đa Kim Cương!";
                             progress = 100;
                         }
-                        document.getElementById('resNextTierDesc').textContent = nextDesc;
-                        document.getElementById('resTierProgressBar').style.width = progress + '%';
+                        document.getElementById("resNextTierDesc").textContent = nextDesc;
+                        document.getElementById("resTierProgressBar").style.width = progress + "%";
 
-                        // History list
-                        const histEl = document.getElementById('resPointHistoryList');
-                        if (data.history && data.history.length > 0) {
-                            histEl.innerHTML = `
-                                <table class="table table-sm table-borderless small mb-0">
-                                    <tbody>
-                                        ${data.history.map(h => `
-                                            <tr class="border-bottom border-light">
-                                                <td class="text-muted text-nowrap py-1" style="width: 140px;">${h.date}</td>
-                                                <td class="py-1">${h.description}</td>
-                                                <td class="text-end fw-bold py-1 ${h.points >= 0 ? 'text-success' : 'text-danger'}">
-                                                    ${h.points > 0 ? '+' : ''}${h.points} đ
-                                                </td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            `;
+                        const historyList = document.getElementById("resPointHistoryList");
+                        historyList.innerHTML = "";
+                        if (cust.history && cust.history.length > 0) {
+                            cust.history.forEach(h => {
+                                const isPlus = h.points >= 0;
+                                historyList.innerHTML += `
+                                    <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light small">
+                                        <div>
+                                            <div class="fw-semibold text-dark">${h.note || "Tích lũy điểm"}</div>
+                                            <small class="text-muted" style="font-size: 0.7rem;">${h.date}</small>
+                                        </div>
+                                        <span class="fw-bold ${isPlus ? "text-success" : "text-danger"}">${isPlus ? "+" : ""}${h.points} đ</span>
+                                    </div>`;
+                            });
                         } else {
-                            histEl.innerHTML = '<div class="text-muted small text-center py-2">Chưa có giao dịch tích điểm nào.</div>';
+                            historyList.innerHTML = "<div class="text-center text-muted small py-2">Chưa có lịch sử giao dịch điểm.</div>";
                         }
 
-                        resultCard.classList.remove('d-none');
-                        updateCartLoyaltyUI(cust);
+                        resultCard.classList.remove("d-none");
+                        syncLoyaltyCartUI(cust);
                     } else {
-                        alertBox.textContent = data.message || 'Không tìm thấy dữ liệu thành viên cho số điện thoại này.';
-                        alertBox.classList.remove('d-none');
-                        policyBox.classList.remove('d-none');
+                        alertBox.textContent = data.message || "Không tìm thấy thông tin thành viên!";
+                        alertBox.classList.remove("d-none");
                     }
                 })
                 .catch(() => {
-                    loading.classList.add('d-none');
-                    alertBox.textContent = 'Không thể kết nối máy chủ để tra cứu điểm!';
-                    alertBox.classList.remove('d-none');
-                    policyBox.classList.remove('d-none');
+                    loading.classList.add("d-none");
+                    alertBox.textContent = "Lỗi kết nối máy chủ khi tra cứu!";
+                    alertBox.classList.remove("d-none");
                 });
         }
 
-        function applyCustomerToCart() {
-            const phone = document.getElementById('resCustPhone')?.textContent || document.getElementById('lookupPhoneInput')?.value.trim();
-            if (phone) {
-                const phoneInput = document.getElementById('custPhone');
-                if (phoneInput) phoneInput.value = phone;
-            }
-            const modalEl = document.getElementById('pointsModal');
-            if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
-
-            switchRightPanel('cart');
-            handlePhoneBlur();
-
-            setTimeout(() => {
-                const chk = document.getElementById('chkUseLoyaltyPoints');
-                if (chk && !chk.checked && currentCustomer && currentCustomer.points > 0) {
-                    chk.checked = true;
-                    toggleUsePointsCart();
-                }
-                showShopToast('Đã áp dụng thông tin thành viên vào giỏ hàng!', 'success');
-            }, 300);
-        }
-
-        function checkPointsFromCart() {
-            const phone = document.getElementById('custPhone')?.value.trim();
-            openPointsModal(phone);
-        }
-
-        function handlePhoneInput() {
-            clearTimeout(phoneCheckTimeout);
-            const val = (document.getElementById('custPhone')?.value || '').trim().replace(/[\s.-]/g, '');
-            if (val.length >= 10) {
-                phoneCheckTimeout = setTimeout(handlePhoneBlur, 500);
-            }
-        }
-
         function handlePhoneBlur() {
-            const phone = (document.getElementById('custPhone')?.value || '').trim();
+            const phone = document.getElementById("custPhone")?.value.trim();
             if (!phone || phone.length < 9) {
-                document.getElementById('loyaltyCartBox')?.classList.add('d-none');
-                isUsingPoints = false;
-                pointsDiscountAmount = 0;
-                pointsToUse = 0;
-                renderCart();
+                hideLoyaltySection();
                 return;
             }
 
-            fetch('/Shop/GetCustomerPoints?phone=' + encodeURIComponent(phone))
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success && data.customer) {
-                        currentCustomer = data.customer;
-                        updateCartLoyaltyUI(data.customer);
-                    } else {
-                        currentCustomer = null;
-                        document.getElementById('loyaltyCartBox')?.classList.add('d-none');
-                        isUsingPoints = false;
-                        pointsDiscountAmount = 0;
-                        pointsToUse = 0;
-                        renderCart();
-                    }
-                })
-                .catch(() => {});
+            clearTimeout(phoneCheckTimeout);
+            phoneCheckTimeout = setTimeout(() => {
+                fetch("/Shop/GetCustomerPoints?phone=" + encodeURIComponent(phone))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success && data.customer) {
+                            currentCustomer = data.customer;
+                            syncLoyaltyCartUI(data.customer);
+                        } else {
+                            hideLoyaltySection();
+                        }
+                    })
+                    .catch(() => hideLoyaltySection());
+            }, 300);
         }
 
-        function updateCartLoyaltyUI(cust) {
-            const box = document.getElementById('loyaltyCartBox');
-            if (!box || !cust) return;
-
-            document.getElementById('loyaltyCustomerName').textContent = cust.name;
-            document.getElementById('loyaltyCustomerTier').textContent = cust.tier;
-            document.getElementById('loyaltyCustomerPoints').textContent = cust.points;
-            document.getElementById('loyaltyCustomerValue').textContent = formatMoney(cust.points * 1000);
-
-            box.classList.remove('d-none');
-
-            if (cust.points <= 0) {
-                document.getElementById('loyaltyPointsInputWrap')?.classList.add('d-none');
-                const chk = document.getElementById('chkUseLoyaltyPoints');
-                if (chk) { chk.checked = false; chk.disabled = true; }
-                isUsingPoints = false;
-                pointsDiscountAmount = 0;
-                pointsToUse = 0;
+        function syncLoyaltyCartUI(cust) {
+            const wrap = document.getElementById("loyaltySectionCart");
+            if (!wrap) return;
+            if (cust && cust.points > 0) {
+                wrap.classList.remove("d-none");
+                document.getElementById("loyaltyCustomerPoints").textContent = cust.points;
+                document.getElementById("loyaltyCustomerValue").textContent = formatMoney(cust.discountValue || (cust.points * 1000));
             } else {
-                const chk = document.getElementById('chkUseLoyaltyPoints');
-                if (chk) { chk.disabled = false; }
+                wrap.classList.add("d-none");
             }
             renderCart();
         }
 
+        function hideLoyaltySection() {
+            currentCustomer = null;
+            isUsingPoints = false;
+            pointsDiscountAmount = 0;
+            pointsToUse = 0;
+            const wrap = document.getElementById("loyaltySectionCart");
+            if (wrap) wrap.classList.add("d-none");
+            const chk = document.getElementById("chkUseLoyaltyPoints");
+            if (chk) chk.checked = false;
+            document.getElementById("loyaltyPointsInputWrap")?.classList.add("d-none");
+            renderCart();
+        }
+
         function toggleUsePointsCart() {
-            const chk = document.getElementById('chkUseLoyaltyPoints');
-            const wrap = document.getElementById('loyaltyPointsInputWrap');
+            const chk = document.getElementById("chkUseLoyaltyPoints");
+            const wrap = document.getElementById("loyaltyPointsInputWrap");
             isUsingPoints = Boolean(chk && chk.checked);
 
             if (isUsingPoints) {
-                wrap?.classList.remove('d-none');
+                wrap?.classList.remove("d-none");
                 useMaxPointsCart();
             } else {
-                wrap?.classList.add('d-none');
+                wrap?.classList.add("d-none");
                 pointsDiscountAmount = 0;
                 pointsToUse = 0;
                 renderCart();
@@ -1803,14 +1755,14 @@
             cart.forEach(i => subTotal += i.price * i.quantity);
             const maxPointsCanUse = Math.min(currentCustomer.points || 0, Math.floor(subTotal / 1000));
             pointsToUse = Math.max(0, maxPointsCanUse);
-            const input = document.getElementById('inputPointsToUse');
+            const input = document.getElementById("inputPointsToUse");
             if (input) input.value = pointsToUse;
             onPointsAmountChange();
         }
 
         function onPointsAmountChange() {
             if (!isUsingPoints || !currentCustomer) return;
-            const input = document.getElementById('inputPointsToUse');
+            const input = document.getElementById("inputPointsToUse");
             let val = parseInt(input?.value, 10);
             if (isNaN(val) || val < 0) val = 0;
 
@@ -1825,32 +1777,40 @@
             pointsToUse = val;
             pointsDiscountAmount = pointsToUse * 1000;
 
-            const preview = document.getElementById('loyaltyDiscountPreviewText');
-            if (preview) preview.textContent = '-' + formatMoney(pointsDiscountAmount);
+            const preview = document.getElementById("loyaltyDiscountPreviewText");
+            if (preview) preview.textContent = "-" + formatMoney(pointsDiscountAmount);
 
             renderCart();
         }
 
         function filterMenu(catId, btn) {
-            document.querySelectorAll('.filter-category-btn, .cat-menu-item').forEach(b => b.classList.remove('active'));
-            if (btn) btn.classList.add('active');
+            document.querySelectorAll(".filter-category-btn, .cat-menu-item").forEach(b => b.classList.remove("active"));
+            if (btn) btn.classList.add("active");
 
-            const items = document.querySelectorAll('.food-item');
+            const items = document.querySelectorAll(".food-item");
             let count = 0;
             items.forEach(el => {
                 let show = false;
-                if (catId === 'all') {
+                if (catId === "all") {
                     show = true;
-                } else if (catId === 'combo') {
-                    show = el.getAttribute('data-combo') === 'true';
+                } else if (catId === "combo") {
+                    show = el.getAttribute("data-combo") === "true";
                 } else {
-                    show = el.getAttribute('data-category') === String(catId);
+                    show = el.getAttribute("data-category") === String(catId);
                 }
-                el.style.display = show ? 'block' : 'none';
+                el.style.display = show ? "block" : "none";
                 if (show) count++;
             });
-            const badge = document.getElementById('itemsCountBadge');
-            if (badge) badge.textContent = count + ' món';
+            const badge = document.getElementById("itemsCountBadge");
+            if (badge) badge.textContent = count + " món";
+        }
+
+        function addToCartBtn(btn) {
+            if (!btn) return;
+            const id = parseInt(btn.getAttribute("data-id"), 10);
+            const name = btn.getAttribute("data-name") || "";
+            const price = parseFloat(btn.getAttribute("data-price")) || 0;
+            addToCart(id, name, price);
         }
 
         function addToCart(id, name, price) {
@@ -1861,6 +1821,7 @@
                 cart.push({ id, name, price, quantity: 1 });
             }
             renderCart();
+            showShopToast("Đã thêm \"" + name + "\" vào giỏ hàng!", "success");
         }
 
         function updateItemQuantity(id, delta) {
@@ -1874,32 +1835,57 @@
             }
         }
 
-        function renderCart() {
-            const listEl = document.getElementById('cartItemsList');
-            const noticeEl = document.getElementById('emptyCartNotice');
-            const subTotalEl = document.getElementById('subTotalText');
-            const finalTotalEl = document.getElementById('finalTotalText');
-            const badgeEl = document.getElementById('cartCountBadge');
-            const rowDiscount = document.getElementById('rowDiscountPoints');
-            const rowShip = document.getElementById('rowShipFee');
-            const shipFeeEl = document.getElementById('cartShipFeeText');
-            const discTextEl = document.getElementById('cartDiscountPointsText');
-
-            if (cart.length === 0) {
-                listEl.innerHTML = '';
-                listEl.appendChild(noticeEl);
-                noticeEl.style.display = 'block';
-                badgeEl.innerText = '0 món';
-                const tabBadge = document.getElementById('cartCountBadgeTab');
-                if (tabBadge) tabBadge.innerText = '0';
-                subTotalEl.innerText = '0 đ';
-                if (rowDiscount) rowDiscount.style.display = 'none';
-                if (rowShip) rowShip.style.display = 'none';
-                finalTotalEl.innerText = formatMoney(shippingFee);
+        function onAddressChanged() {
+            const addr = document.getElementById("deliveryAddress")?.value.trim() || "";
+            const statusEl = document.getElementById("deliveryFeeStatus");
+            if (!addr) {
+                shippingFee = 0;
+                if (statusEl) statusEl.innerHTML = "";
+                renderCart();
                 return;
             }
 
-            listEl.innerHTML = '';
+            let subTotal = 0;
+            cart.forEach(i => subTotal += i.price * i.quantity);
+
+            if (subTotal >= 150000) {
+                shippingFee = 0;
+                if (statusEl) statusEl.innerHTML = "<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đơn hàng từ 150k - Miễn phí vận chuyển!</span>";
+            } else {
+                shippingFee = 15000;
+                if (statusEl) statusEl.innerHTML = "<span class="text-primary"><i class="fas fa-truck me-1"></i>Phí giao hàng tận nơi: <b>" + formatMoney(shippingFee) + "</b></span>";
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const listEl = document.getElementById("cartItemsList");
+            const noticeEl = document.getElementById("emptyCartNotice");
+            const subTotalEl = document.getElementById("subTotalText");
+            const finalTotalEl = document.getElementById("finalTotalText");
+            const badgeEl = document.getElementById("cartCountBadge");
+            const rowDiscount = document.getElementById("rowDiscountPoints");
+            const rowShip = document.getElementById("rowShipFee");
+            const shipFeeEl = document.getElementById("cartShipFeeText");
+            const discTextEl = document.getElementById("cartDiscountPointsText");
+
+            if (cart.length === 0) {
+                listEl.innerHTML = "";
+                if (noticeEl) {
+                    listEl.appendChild(noticeEl);
+                    noticeEl.style.display = "block";
+                }
+                if (badgeEl) badgeEl.innerText = "0 món";
+                const tabBadge = document.getElementById("cartCountBadgeTab");
+                if (tabBadge) tabBadge.innerText = "0";
+                if (subTotalEl) subTotalEl.innerText = "0 đ";
+                if (rowDiscount) rowDiscount.style.display = "none";
+                if (rowShip) rowShip.style.display = "none";
+                if (finalTotalEl) finalTotalEl.innerText = formatMoney(shippingFee);
+                return;
+            }
+
+            listEl.innerHTML = "";
             let subTotal = 0;
             let totalCount = 0;
 
@@ -1908,152 +1894,127 @@
                 const lineTotal = item.price * item.quantity;
                 subTotal += lineTotal;
 
-                const row = document.createElement('div');
-                row.className = 'd-flex justify-content-between align-items-center mb-2 pb-2 border-bottom';
+                const row = document.createElement("div");
+                row.className = "d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom";
                 row.innerHTML = `
                     <div style="max-width: 55%;">
                         <div class="fw-semibold small text-truncate text-dark">${item.name}</div>
                         <small class="text-danger tabular-nums">${formatMoney(item.price)}</small>
                     </div>
                     <div class="d-flex align-items-center bg-light rounded-2 border px-1">
-                        <button class="btn btn-sm p-0 px-2 text-muted border-0" onclick="updateItemQuantity(${item.id}, -1)">-</button>
+                        <button type="button" class="btn btn-sm p-0 px-2 text-muted border-0" onclick="updateItemQuantity(${item.id}, -1)">-</button>
                         <span class="small fw-bold px-2 tabular-nums">${item.quantity}</span>
-                        <button class="btn btn-sm p-0 px-2 text-muted border-0" onclick="updateItemQuantity(${item.id}, 1)">+</button>
+                        <button type="button" class="btn btn-sm p-0 px-2 text-muted border-0" onclick="updateItemQuantity(${item.id}, 1)">+</button>
                     </div>
                 `;
                 listEl.appendChild(row);
             });
+
+            // Recheck freeship condition
+            const addr = document.getElementById("deliveryAddress")?.value.trim();
+            if (addr) {
+                if (subTotal >= 150000) {
+                    shippingFee = 0;
+                    const statusEl = document.getElementById("deliveryFeeStatus");
+                    if (statusEl) statusEl.innerHTML = "<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đơn hàng từ 150k - Miễn phí vận chuyển!</span>";
+                } else {
+                    shippingFee = 15000;
+                    const statusEl = document.getElementById("deliveryFeeStatus");
+                    if (statusEl) statusEl.innerHTML = "<span class="text-primary"><i class="fas fa-truck me-1"></i>Phí giao hàng tận nơi: <b>" + formatMoney(shippingFee) + "</b></span>";
+                }
+            }
 
             // Xử lý giảm trừ điểm nếu kích hoạt
             if (isUsingPoints && currentCustomer && currentCustomer.points > 0) {
                 const maxPoints = Math.min(currentCustomer.points, Math.floor(subTotal / 1000));
                 if (pointsToUse > maxPoints) {
                     pointsToUse = maxPoints;
-                    const input = document.getElementById('inputPointsToUse');
+                    const input = document.getElementById("inputPointsToUse");
                     if (input) input.value = pointsToUse;
                 }
                 pointsDiscountAmount = pointsToUse * 1000;
 
                 if (pointsDiscountAmount > 0) {
-                    if (rowDiscount) rowDiscount.style.display = 'flex';
-                    if (discTextEl) discTextEl.innerText = '-' + formatMoney(pointsDiscountAmount);
+                    if (rowDiscount) rowDiscount.style.display = "flex";
+                    if (discTextEl) discTextEl.innerText = "-" + formatMoney(pointsDiscountAmount);
                 } else {
-                    if (rowDiscount) rowDiscount.style.display = 'none';
+                    if (rowDiscount) rowDiscount.style.display = "none";
                 }
             } else {
                 pointsDiscountAmount = 0;
-                if (rowDiscount) rowDiscount.style.display = 'none';
+                if (rowDiscount) rowDiscount.style.display = "none";
             }
 
             if (rowShip) {
-                if (shippingFee > 0) {
-                    rowShip.style.display = 'flex';
-                    if (shipFeeEl) shipFeeEl.innerText = formatMoney(shippingFee);
+                if (shippingFee > 0 || addr) {
+                    rowShip.style.display = "flex";
+                    if (shipFeeEl) shipFeeEl.innerText = shippingFee === 0 ? "Miễn phí" : formatMoney(shippingFee);
                 } else {
-                    rowShip.style.display = 'none';
+                    rowShip.style.display = "none";
                 }
             }
 
             const finalTotal = Math.max(0, subTotal - pointsDiscountAmount) + shippingFee;
 
-            badgeEl.innerText = `${totalCount} món`;
-            const tabBadge = document.getElementById('cartCountBadgeTab');
+            if (badgeEl) badgeEl.innerText = `${totalCount} món`;
+            const tabBadge = document.getElementById("cartCountBadgeTab");
             if (tabBadge) tabBadge.innerText = String(totalCount);
-            subTotalEl.innerText = formatMoney(subTotal);
-            finalTotalEl.innerText = formatMoney(finalTotal);
-        }
-
-        async function calcDeliveryFee() {
-            const addr = document.getElementById('deliveryAddress').value.trim();
-            const statusEl = document.getElementById('deliveryFeeStatus');
-            if (!addr) {
-                shippingFee = 0;
-                statusEl.innerHTML = '';
-                renderCart();
-                return;
-            }
-
-            statusEl.innerHTML = '<span class="text-muted"><i class="fas fa-spinner fa-spin me-1"></i>Đang tính khoảng cách...</span>';
-
-            try {
-                const query = encodeURIComponent(addr + ', Việt Nam');
-                const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`).then(r => r.json());
-
-                if (geo && geo.length > 0) {
-                    const lat = parseFloat(geo[0].lat);
-                    const lon = parseFloat(geo[0].lon);
-                    const osrm = await fetch(`https://router.project-osrm.org/route/v1/driving/105.795139,21.037814;${lon},${lat}?overview=false`).then(r => r.json());
-                    if (osrm && osrm.routes && osrm.routes.length > 0) {
-                        const distKm = osrm.routes[0].distance / 1000;
-                        if (distKm <= 2) {
-                            shippingFee = 0;
-                            statusEl.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>${distKm.toFixed(1)} km - Miễn phí ship!</span>`;
-                        } else {
-                            shippingFee = Math.ceil(distKm - 2) * 5000;
-                            statusEl.innerHTML = `<span class="text-primary"><i class="fas fa-motorcycle me-1"></i>${distKm.toFixed(1)} km - Phí ship: ${formatMoney(shippingFee)}</span>`;
-                        }
-                    } else {
-                        shippingFee = 15000;
-                        statusEl.innerHTML = `<span class="text-muted">Cước giao hàng cố định: ${formatMoney(shippingFee)}</span>`;
-                    }
-                } else {
-                    shippingFee = 15000;
-                    statusEl.innerHTML = `<span class="text-muted">Cước giao hàng tiêu chuẩn: ${formatMoney(shippingFee)}</span>`;
-                }
-            } catch (e) {
-                shippingFee = 15000;
-                statusEl.innerHTML = `<span class="text-muted">Cước giao hàng: ${formatMoney(shippingFee)}</span>`;
-            }
-            renderCart();
+            if (subTotalEl) subTotalEl.innerText = formatMoney(subTotal);
+            if (finalTotalEl) finalTotalEl.innerText = formatMoney(finalTotal);
         }
 
         function showShopToast(message, type) {
-            type = type || 'success';
-            var container = document.getElementById('shopToastContainer');
+            type = type || "success";
+            const container = document.getElementById("shopToastContainer");
             if (!container) return;
-            var toastEl = document.createElement('div');
-            toastEl.className = 'toast align-items-center text-white bg-' + (type === 'error' ? 'danger' : (type === 'warning' ? 'warning text-dark' : 'dark')) + ' border-0 show mb-2';
-            toastEl.setAttribute('role', 'alert');
-            toastEl.innerHTML = '<div class="d-flex"><div class="toast-body">' + message + '</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>';
+            const toastEl = document.createElement("div");
+            toastEl.className = "toast align-items-center text-white bg-" + (type === "error" ? "danger" : (type === "warning" ? "warning text-dark" : "dark")) + " border-0 show mb-2";
+            toastEl.setAttribute("role", "alert");
+            toastEl.innerHTML = "<div class="d-flex"><div class="toast-body">" + message + "</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>";
             container.appendChild(toastEl);
             setTimeout(function() { toastEl.remove(); }, 3500);
         }
 
+        // ==================== ĐẶT HÀNG (CHECKOUT) ====================
         function checkoutOrder() {
-            if (cart.length === 0) return showShopToast('Vui lòng chọn ít nhất 1 món ăn vào giỏ hàng!', 'warning');
+            if (cart.length === 0) return showShopToast("Vui lòng chọn ít nhất 1 món ăn vào giỏ hàng!", "warning");
             
-            const phone = document.getElementById('custPhone').value.trim();
+            const phone = document.getElementById("custPhone")?.value.trim() || "";
             if (!phone) {
-                document.getElementById('custPhone').focus();
-                return showShopToast('Vui lòng nhập số điện thoại nhận hàng (bắt buộc)!', 'warning');
+                document.getElementById("custPhone")?.focus();
+                return showShopToast("Vui lòng nhập số điện thoại nhận hàng (bắt buộc)!", "warning");
             }
-            const cleanPhone = phone.replace(/[\s.-]/g, '');
+            const cleanPhone = phone.replace(/[\s.-]/g, "");
             if (!/^[0-9]{9,11}$/.test(cleanPhone)) {
-                document.getElementById('custPhone').focus();
-                return showShopToast('Số điện thoại không hợp lệ (cần từ 9 đến 11 chữ số)!', 'warning');
+                document.getElementById("custPhone")?.focus();
+                return showShopToast("Số điện thoại không hợp lệ (cần từ 9 đến 11 chữ số)!", "warning");
             }
 
-            const address = document.getElementById('deliveryAddress').value.trim();
+            const address = document.getElementById("deliveryAddress")?.value.trim() || "";
             if (!address) {
-                document.getElementById('deliveryAddress').focus();
-                return showShopToast('Vui lòng nhập địa chỉ nhận hàng!', 'warning');
+                document.getElementById("deliveryAddress")?.focus();
+                return showShopToast("Vui lòng nhập địa chỉ nhận hàng!", "warning");
             }
 
-            const method = document.getElementById('payMethod').value;
-            const btn = document.getElementById('btnSubmitOrder');
+            const name = document.getElementById("custName")?.value.trim() || "";
+            const method = document.getElementById("payMethod")?.value || "COD";
+            const btn = document.getElementById("btnSubmitOrder");
 
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang xử lý đơn...';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = "<i class="fas fa-spinner fa-spin me-1"></i> Đang xử lý đơn...";
+            }
 
-            fetch('/Shop/Checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            fetch("/Shop/Checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     Items: cart,
                     Address: address,
                     PaymentMethod: method,
                     ShippingFee: shippingFee,
                     CustomerPhone: phone,
+                    CustomerName: name,
                     UsePoints: isUsingPoints,
                     PointsToUse: pointsToUse
                 })
@@ -2064,94 +2025,277 @@
                     if (data.isRedirect && data.redirectUrl) {
                         window.location.href = data.redirectUrl;
                     } else {
-                        document.getElementById('shopSuccessOrderCode').textContent = data.orderCode;
-                        const shipperEl = document.getElementById('shopSuccessShipper');
+                        document.getElementById("shopSuccessOrderCode").textContent = data.orderCode;
+                        const shipperEl = document.getElementById("shopSuccessShipper");
                         if (data.driverName) {
-                            shipperEl.textContent = data.driverName + ' (' + (data.driverPhone || '') + ')';
-                            document.getElementById('shopSuccessShipperRow').style.display = 'flex';
+                            shipperEl.textContent = data.driverName + " (" + (data.driverPhone || "") + ")";
+                            document.getElementById("shopSuccessShipperRow").style.display = "flex";
                         } else {
-                            document.getElementById('shopSuccessShipperRow').style.display = 'none';
+                            document.getElementById("shopSuccessShipperRow").style.display = "none";
                         }
 
-                        // Chi tiết điểm thưởng tích lũy & tiêu điểm
-                        const pointsUsedRow = document.getElementById('shopSuccessPointsUsedRow');
+                        const pointsUsedRow = document.getElementById("shopSuccessPointsUsedRow");
                         if (pointsUsedRow) {
                             if (data.pointsUsed > 0) {
-                                document.getElementById('shopSuccessPointsUsed').textContent = '-' + data.pointsUsed + ' điểm (-' + formatMoney(data.discountAmount || (data.pointsUsed * 1000)) + ')';
-                                pointsUsedRow.style.display = 'flex';
+                                document.getElementById("shopSuccessPointsUsed").textContent = "-" + data.pointsUsed + " điểm (-" + formatMoney(data.discountAmount || (data.pointsUsed * 1000)) + ")";
+                                pointsUsedRow.style.display = "flex";
                             } else {
-                                pointsUsedRow.style.display = 'none';
+                                pointsUsedRow.style.display = "none";
                             }
                         }
 
-                        const pointsEarnedRow = document.getElementById('shopSuccessPointsEarnedRow');
+                        const pointsEarnedRow = document.getElementById("shopSuccessPointsEarnedRow");
                         if (pointsEarnedRow) {
                             if (data.pointsEarned > 0) {
-                                document.getElementById('shopSuccessPointsEarned').textContent = '+' + data.pointsEarned + ' điểm';
-                                pointsEarnedRow.style.display = 'flex';
+                                document.getElementById("shopSuccessPointsEarned").textContent = "+" + data.pointsEarned + " điểm";
+                                pointsEarnedRow.style.display = "flex";
                             } else {
-                                pointsEarnedRow.style.display = 'none';
+                                pointsEarnedRow.style.display = "none";
                             }
                         }
 
-                        const pointsRemainRow = document.getElementById('shopSuccessPointsRemainingRow');
+                        const pointsRemainRow = document.getElementById("shopSuccessPointsRemainingRow");
                         if (pointsRemainRow) {
                             if (data.remainingPoints !== undefined) {
-                                document.getElementById('shopSuccessPointsRemaining').textContent = data.remainingPoints + ' điểm';
-                                pointsRemainRow.style.display = 'flex';
+                                document.getElementById("shopSuccessPointsRemaining").textContent = data.remainingPoints + " điểm";
+                                pointsRemainRow.style.display = "flex";
                             } else {
-                                pointsRemainRow.style.display = 'none';
+                                pointsRemainRow.style.display = "none";
                             }
                         }
 
-                        var modal = new bootstrap.Modal(document.getElementById('shopOrderSuccessModal'));
-                        modal.show();
+                        const successModal = bootstrap.Modal.getOrCreateInstance(document.getElementById("shopOrderSuccessModal"));
+                        successModal.show();
 
                         cart = [];
                         isUsingPoints = false;
                         pointsDiscountAmount = 0;
                         pointsToUse = 0;
-                        const chkPoints = document.getElementById('chkUseLoyaltyPoints');
+                        const chkPoints = document.getElementById("chkUseLoyaltyPoints");
                         if (chkPoints) chkPoints.checked = false;
-                        document.getElementById('loyaltyPointsInputWrap')?.classList.add('d-none');
+                        document.getElementById("loyaltyPointsInputWrap")?.classList.add("d-none");
                         renderCart();
-                        document.getElementById('deliveryAddress').value = '';
-                        document.getElementById('deliveryFeeStatus').innerHTML = '';
+                        if (document.getElementById("deliveryAddress")) document.getElementById("deliveryAddress").value = "";
+                        if (document.getElementById("deliveryFeeStatus")) document.getElementById("deliveryFeeStatus").innerHTML = "";
                     }
                 } else {
-                    showShopToast('Lỗi: ' + (data.message || 'Không thể đặt hàng.'), 'error');
+                    showShopToast("Lỗi: " + (data.message || "Không thể đặt hàng."), "error");
                 }
             })
-            .catch(() => showShopToast('Đã tiếp nhận thông tin đơn hàng thành công!', 'info'))
+            .catch(() => showShopToast("Lỗi kết nối khi gửi đơn hàng!", "error"))
             .finally(() => {
-                btn.disabled = false;
-                btn.innerHTML = 'XÁC NHẬN ĐẶT HÀNG';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = "XÁC NHẬN ĐẶT HÀNG";
+                }
             });
         }
 
+        // ==================== THEO DÕI ĐƠN HÀNG THỜI GIAN THỰC ====================
+        function openTrackOrderModal(prefillCode) {
+            if (trackIntervalId) {
+                clearInterval(trackIntervalId);
+                trackIntervalId = null;
+            }
+            const query = prefillCode || document.getElementById("custPhone")?.value.trim() || "";
+            const input = document.getElementById("trackQueryInput");
+            if (input && query) input.value = query;
+            const modalEl = document.getElementById("trackOrderModal");
+            if (modalEl) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                if (input && input.value.trim()) queryTrackOrder();
+            }
+        }
+
+        function queryTrackOrder() {
+            const query = document.getElementById("trackQueryInput")?.value.trim();
+            const loading = document.getElementById("trackLoadingState");
+            const alertBox = document.getElementById("trackErrorAlert");
+            const resultCard = document.getElementById("trackResultCard");
+
+            if (!query) {
+                alertBox.textContent = "Vui lòng nhập mã đơn hàng hoặc số điện thoại!";
+                alertBox.classList.remove("d-none");
+                resultCard.classList.add("d-none");
+                return;
+            }
+
+            loading.classList.remove("d-none");
+            alertBox.classList.add("d-none");
+            resultCard.classList.add("d-none");
+
+            if (trackIntervalId) {
+                clearInterval(trackIntervalId);
+                trackIntervalId = null;
+            }
+
+            fetch("/Shop/TrackOrder?query=" + encodeURIComponent(query))
+                .then(r => r.json())
+                .then(data => {
+                    loading.classList.add("d-none");
+                    if (data.success && data.order) {
+                        renderTrackUI(data.order);
+                    } else {
+                        alertBox.textContent = data.message || "Không tìm thấy thông tin đơn hàng!";
+                        alertBox.classList.remove("d-none");
+                    }
+                })
+                .catch(() => {
+                    loading.classList.add("d-none");
+                    alertBox.textContent = "Lỗi kết nối máy chủ khi tra cứu đơn hàng!";
+                    alertBox.classList.remove("d-none");
+                });
+        }
+
+        function renderTrackUI(order) {
+            const resultCard = document.getElementById("trackResultCard");
+            resultCard.classList.remove("d-none");
+
+            document.getElementById("trackOrderCode").textContent = order.orderCode;
+            document.getElementById("trackOrderDate").textContent = order.orderDate;
+            document.getElementById("trackShipperName").textContent = order.shipperName;
+            document.getElementById("trackShipperPhone").textContent = order.shipperPhone;
+            document.getElementById("trackAddress").textContent = order.shippingAddress || "Nhận tại quầy";
+            document.getElementById("trackPayMethod").textContent = order.paymentMethod;
+            document.getElementById("trackTotalAmount").textContent = formatMoney(order.totalAmount);
+
+            const itemsEl = document.getElementById("trackItemsList");
+            itemsEl.innerHTML = "";
+            if (order.items && order.items.length) {
+                order.items.forEach(it => {
+                    itemsEl.innerHTML += `
+                        <div class="d-flex justify-content-between align-items-center py-1 border-bottom border-light">
+                            <div>
+                                <span class="fw-semibold text-dark">${it.productName}</span>
+                                <small class="text-muted ms-1">x${it.quantity}</small>
+                            </div>
+                            <span class="text-danger fw-bold">${formatMoney(it.lineTotal)}</span>
+                        </div>`;
+                });
+            }
+
+            trackCurrentSeconds = order.elapsedSeconds || 0;
+            updateTrackStep(trackCurrentSeconds);
+
+            trackIntervalId = setInterval(function() {
+                trackCurrentSeconds += 1;
+                updateTrackStep(trackCurrentSeconds);
+            }, 1000);
+        }
+
+        function updateTrackStep(seconds) {
+            const step1Icon = document.getElementById("stepIcon1");
+            const step2Icon = document.getElementById("stepIcon2");
+            const step3Icon = document.getElementById("stepIcon3");
+            const step1Text = document.getElementById("stepText1");
+            const step2Text = document.getElementById("stepText2");
+            const step3Text = document.getElementById("stepText3");
+            const progressBar = document.getElementById("trackProgressBar");
+            const titleEl = document.getElementById("trackStatusTitle");
+            const descEl = document.getElementById("trackStatusDesc");
+            const timerBadge = document.getElementById("trackTimerBadge");
+            const timerText = document.getElementById("trackTimerText");
+
+            if (!step1Icon || !titleEl) return;
+
+            if (seconds < 300) {
+                progressBar.style.width = "33%";
+                step1Icon.style.background = "#E11D48";
+                step1Icon.style.color = "#fff";
+                step1Text.className = "fw-bold small mt-2 text-danger";
+
+                step2Icon.style.background = "#E2E8F0";
+                step2Icon.style.color = "#64748B";
+                step2Text.className = "fw-bold small mt-2 text-muted";
+
+                step3Icon.style.background = "#E2E8F0";
+                step3Icon.style.color = "#64748B";
+                step3Text.className = "fw-bold small mt-2 text-muted";
+
+                const remain = 300 - seconds;
+                const min = Math.floor(remain / 60);
+                const sec = remain % 60;
+                const fmt = (min < 10 ? "0" : "") + min + ":" + (sec < 10 ? "0" : "") + sec;
+
+                titleEl.textContent = "Đang chuẩn bị món";
+                descEl.textContent = "Đầu bếp đang chế biến các món ăn nóng hổi theo đơn của bạn.";
+                timerBadge.className = "badge bg-warning text-dark py-2 px-3 rounded-pill fw-bold";
+                timerText.innerHTML = `<i class="fas fa-clock me-1"></i> Bếp đang làm món: chuyển giao hàng sau <b>${fmt}</b>`;
+            } 
+            else if (seconds < 900) {
+                progressBar.style.width = "66%";
+                step1Icon.style.background = "#10B981";
+                step1Icon.style.color = "#fff";
+                step1Text.className = "fw-bold small mt-2 text-success";
+
+                step2Icon.style.background = "#0284C7";
+                step2Icon.style.color = "#fff";
+                step2Text.className = "fw-bold small mt-2 text-primary";
+
+                step3Icon.style.background = "#E2E8F0";
+                step3Icon.style.color = "#64748B";
+                step3Text.className = "fw-bold small mt-2 text-muted";
+
+                const remain = 900 - seconds;
+                const min = Math.floor(remain / 60);
+                const sec = remain % 60;
+                const fmt = (min < 10 ? "0" : "") + min + ":" + (sec < 10 ? "0" : "") + sec;
+
+                titleEl.textContent = "Đang giao hàng";
+                descEl.textContent = "Tài xế đang di chuyển giao hàng đến địa chỉ của bạn.";
+                timerBadge.className = "badge bg-primary text-white py-2 px-3 rounded-pill fw-bold";
+                timerText.innerHTML = `<i class="fas fa-motorcycle me-1"></i> Đang giao hàng: dự kiến đến nơi sau <b>${fmt}</b>`;
+            } 
+            else {
+                progressBar.style.width = "100%";
+                step1Icon.style.background = "#10B981";
+                step1Icon.style.color = "#fff";
+                step1Text.className = "fw-bold small mt-2 text-success";
+
+                step2Icon.style.background = "#10B981";
+                step2Icon.style.color = "#fff";
+                step2Text.className = "fw-bold small mt-2 text-success";
+
+                step3Icon.style.background = "#10B981";
+                step3Icon.style.color = "#fff";
+                step3Text.className = "fw-bold small mt-2 text-success";
+
+                titleEl.textContent = "Đã giao hàng thành công";
+                descEl.textContent = "Đơn hàng đã được giao tận nơi. Chúc bạn có bữa ăn thật ngon miệng!";
+                timerBadge.className = "badge bg-success text-white py-2 px-3 rounded-pill fw-bold";
+                timerText.innerHTML = `<i class="fas fa-circle-check me-1"></i> Đã hoàn tất giao hàng`;
+            }
+        }
+
+        function trackFromSuccess() {
+            const code = document.getElementById("shopSuccessOrderCode")?.textContent?.trim();
+            bootstrap.Modal.getInstance(document.getElementById("shopOrderSuccessModal"))?.hide();
+            openTrackOrderModal(code);
+        }
+
         async function sendBotMessage() {
-            const input = document.getElementById('botInput');
+            const input = document.getElementById("botInput");
             const msg = input.value.trim();
             if (!msg) return;
 
-            const chatLogs = document.getElementById('chatLogs');
+            const chatLogs = document.getElementById("chatLogs");
             chatLogs.innerHTML += `<div class="msg-bubble msg-user">${msg}</div>`;
-            input.value = '';
+            input.value = "";
             chatLogs.scrollTop = chatLogs.scrollHeight;
 
-            const tempId = 'bot-temp-' + Date.now();
+            const tempId = "bot-temp-" + Date.now();
             chatLogs.innerHTML += `<div id="${tempId}" class="msg-bubble msg-bot text-muted"><i class="fas fa-spinner fa-spin me-1"></i> Đang suy nghĩ...</div>`;
             chatLogs.scrollTop = chatLogs.scrollHeight;
 
             try {
-                const res = await fetch('/Shop/ChatBot', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ Message: msg })
+                const res = await fetch("/Shop/ChatBot", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: msg })
                 }).then(r => r.json());
 
                 document.getElementById(tempId)?.remove();
-                const replyHtml = res.reply.replace(/\n/g, '<br>');
+                const replyHtml = res.reply.replace(/\n/g, "<br>");
                 chatLogs.innerHTML += `<div class="msg-bubble msg-bot">🤖 ${replyHtml}</div>`;
                 chatLogs.scrollTop = chatLogs.scrollHeight;
             } catch (e) {
@@ -2161,84 +2305,84 @@
         }
 
         function switchRightPanel(tab) {
-            const tabCart = document.getElementById('tabBtnCart');
-            const tabAi = document.getElementById('tabBtnAi');
-            const cartWrap = document.getElementById('cartPanelWrap');
-            const botWrap = document.getElementById('botCardWrap');
+            const tabCart = document.getElementById("tabBtnCart");
+            const tabAi = document.getElementById("tabBtnAi");
+            const cartWrap = document.getElementById("cartPanelWrap");
+            const botWrap = document.getElementById("botCardWrap");
 
-            if (tab === 'ai') {
+            if (tab === "ai") {
                 if (tabCart) { 
-                    tabCart.classList.remove('btn-dark', 'text-white', 'active'); 
-                    tabCart.classList.add('text-muted'); 
+                    tabCart.classList.remove("btn-dark", "text-white", "active"); 
+                    tabCart.classList.add("text-muted"); 
                 }
                 if (tabAi) { 
-                    tabAi.classList.add('btn-primary', 'text-white', 'active'); 
-                    tabAi.classList.remove('text-muted'); 
+                    tabAi.classList.add("btn-primary", "text-white", "active"); 
+                    tabAi.classList.remove("text-muted"); 
                 }
-                if (cartWrap) { cartWrap.style.display = 'none'; }
+                if (cartWrap) { cartWrap.style.display = "none"; }
                 if (botWrap) { 
-                    botWrap.style.display = 'flex'; 
-                    botWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    setTimeout(() => document.getElementById('botInput')?.focus(), 250);
+                    botWrap.style.display = "flex"; 
+                    botWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                    setTimeout(() => document.getElementById("botInput")?.focus(), 250);
                 }
             } else {
                 if (tabAi) { 
-                    tabAi.classList.remove('btn-primary', 'text-white', 'active'); 
-                    tabAi.classList.add('text-muted'); 
+                    tabAi.classList.remove("btn-primary", "text-white", "active"); 
+                    tabAi.classList.add("text-muted"); 
                 }
                 if (tabCart) { 
-                    tabCart.classList.add('btn-dark', 'text-white', 'active'); 
-                    tabCart.classList.remove('text-muted'); 
+                    tabCart.classList.add("btn-dark", "text-white", "active"); 
+                    tabCart.classList.remove("text-muted"); 
                 }
                 if (cartWrap) { 
-                    cartWrap.style.display = 'block'; 
-                    cartWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    cartWrap.style.display = "block"; 
+                    cartWrap.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 }
                 if (window.innerWidth < 992) {
-                    if (botWrap) botWrap.style.display = 'none';
+                    if (botWrap) botWrap.style.display = "none";
                 } else {
-                    if (botWrap) botWrap.style.display = 'flex';
+                    if (botWrap) botWrap.style.display = "flex";
                 }
             }
         }
 
         function openFloatingAiChat() {
-            switchRightPanel('ai');
-            const botWrap = document.getElementById('botCardWrap') || document.getElementById('shopSidebarRight');
+            switchRightPanel("ai");
+            const botWrap = document.getElementById("botCardWrap") || document.getElementById("shopSidebarRight");
             if (botWrap) {
-                botWrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                botWrap.scrollIntoView({ behavior: "smooth", block: "center" });
             }
             setTimeout(() => {
-                document.getElementById('botInput')?.focus();
+                document.getElementById("botInput")?.focus();
             }, 300);
         }
 
         function sendComplaint() {
-            const name = document.getElementById('fbName').value.trim();
-            const phone = document.getElementById('fbPhone').value.trim();
-            const content = document.getElementById('fbContent').value.trim();
-            if (!content) return showShopToast('Vui lòng nhập nội dung phản hồi!', 'warning');
+            const name = document.getElementById("fbName").value.trim();
+            const phone = document.getElementById("fbPhone").value.trim();
+            const content = document.getElementById("fbContent").value.trim();
+            if (!content) return showShopToast("Vui lòng nhập nội dung phản hồi!", "warning");
 
-            const modalEl = document.getElementById('feedbackModal');
-            const submitBtn = modalEl ? modalEl.querySelector('.btn-brand-primary') : null;
-            const originalText = submitBtn ? submitBtn.innerHTML : '';
+            const modalEl = document.getElementById("feedbackModal");
+            const submitBtn = modalEl ? modalEl.querySelector(".btn-brand-primary") : null;
+            const originalText = submitBtn ? submitBtn.innerHTML : "";
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi mail...';
+                submitBtn.innerHTML = "<i class="fas fa-spinner fa-spin me-1"></i> Đang gửi mail...";
             }
 
-            fetch('/Shop/SendComplaint', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            fetch("/Shop/SendComplaint", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ CustomerName: name, Phone: phone, Content: content })
             })
             .then(r => r.json())
             .then(data => {
-                showShopToast(data.message || 'Đã gửi phản hồi thành công!', 'success');
-                bootstrap.Modal.getInstance(document.getElementById('feedbackModal'))?.hide();
-                document.getElementById('fbContent').value = '';
+                showShopToast(data.message || "Đã gửi phản hồi thành công!", "success");
+                bootstrap.Modal.getInstance(document.getElementById("feedbackModal"))?.hide();
+                document.getElementById("fbContent").value = "";
             })
-            .catch(() => showShopToast('Lỗi khi gửi phản hồi!', 'error'))
+            .catch(() => showShopToast("Lỗi khi gửi phản hồi!", "error"))
             .finally(() => {
                 if (submitBtn) {
                     submitBtn.disabled = false;
@@ -2247,8 +2391,8 @@
             });
         }
 
-        window.addEventListener('DOMContentLoaded', function() {
-            const phone = document.getElementById('custPhone')?.value.trim();
+        window.addEventListener("DOMContentLoaded", function() {
+            const phone = document.getElementById("custPhone")?.value.trim();
             if (phone && phone.length >= 9) {
                 handlePhoneBlur();
             }

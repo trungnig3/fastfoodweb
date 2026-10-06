@@ -250,9 +250,12 @@ export class ShopController {
 
       // Xử lý khách hàng & điểm tích lũy
       const phoneClean = CustomerPhone.trim();
+      const rawName = (req.body.CustomerName || req.body.Name || req.body.custName || '').trim();
       let targetCustomer = db.getCustomerByPhone(phoneClean);
       if (!targetCustomer) {
-        targetCustomer = db.createCustomer(phoneClean, `Khách hàng Online (${phoneClean})`);
+        targetCustomer = db.createCustomer(phoneClean, rawName || `Khách hàng Online (${phoneClean})`);
+      } else if (rawName && (!targetCustomer.FullName || targetCustomer.FullName.includes('Khách hàng Online'))) {
+        targetCustomer.FullName = rawName;
       }
 
       let pointsUsed = 0;
