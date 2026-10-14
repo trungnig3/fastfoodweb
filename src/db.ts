@@ -284,6 +284,24 @@ class Database {
       { DetailId: this.nextDetailId++, OrderId: order1.OrderId, ProductId: 5, Quantity: 1, UnitPrice: 80000 }
     );
 
+    // Seed ca làm việc trước đã chốt bàn giao (đáp ứng yêu cầu số tiền mở két trùng khớp ca trước)
+    const prevShift: Shift = {
+      ShiftId: this.nextShiftId++,
+      UserId: 2, // Thu ngân
+      StartTime: new Date(Date.now() - 3600000 * 8), // 8 tiếng trước
+      EndTime: new Date(Date.now() - 3600000 * 1), // Kết thúc 1 tiếng trước
+      StartingCash: 500000,
+      ActualCash: 625000, // 500k ban đầu + 125k tiền mặt từ hóa đơn order1 = 625.000 đ
+      CashDifference: 0,
+      TotalHours: 7,
+      StandardHours: 7,
+      OvertimeHours: 0,
+      OvertimeBonus: 0,
+      LatePenalty: 0,
+      TotalSalary: 175000
+    };
+    this.shifts.push(prevShift);
+
     const order2: Order = {
       OrderId: this.nextOrderId++,
       OrderCode: 'ONLINE' + new Date().toISOString().slice(2, 10).replace(/-/g, '') + '7842',
@@ -366,6 +384,31 @@ class Database {
     return this.shifts
       .filter(s => s.UserId === userId)
       .sort((a, b) => b.StartTime.getTime() - a.StartTime.getTime())[0];
+  }
+
+  getPreviousClosedShift(): Shift | undefined {
+    return this.shifts
+      .filter(s => s.EndTime !== null)
+      .sort((a, b) => {
+        const timeB = b.EndTime ? new Date(b.EndTime).getTime() : 0;
+        const timeA = a.EndTime ? new Date(a.EndTime).getTime() : 0;
+        return timeB - timeA;
+      })[0];
+  }
+
+  getExpectedPreviousCash(): number {
+    const prev = this.getPreviousClosedShift();
+    if (prev) {
+      if (prev.ActualCash && prev.ActualCash > 0) {
+        return prev.ActualCash;
+      }
+      const shiftOrders = this.orders.filter(
+        o => o.CashierId === prev.UserId && o.OrderDate >= prev.StartTime && (prev.EndTime ? o.OrderDate <= prev.EndTime : true) && o.PaymentMethod === 'Tiền mặt'
+      );
+      const cashRevenue = shiftOrders.reduce((acc, o) => acc + o.TotalAmount, 0);
+      return prev.StartingCash + cashRevenue;
+    }
+    return 500000;
   }
 
   createShift(userId: number, startingCash: number = 0): Shift {

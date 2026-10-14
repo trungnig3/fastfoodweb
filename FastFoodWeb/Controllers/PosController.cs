@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
@@ -165,9 +165,20 @@ namespace FastFoodWeb.Controllers
             var user = Session["User"] as User ?? _db.GetUser("thungan");
             if (user == null) return Json(new { success = false, message = "Chưa đăng nhập!" });
 
+            var lastClosedShift = _db.Shifts.Where(s => s.EndTime != null).OrderByDescending(s => s.EndTime).FirstOrDefault();
+            decimal expectedCash = lastClosedShift != null && lastClosedShift.ActualCash > 0 ? lastClosedShift.ActualCash : 625000m;
+
+            if (startingCash != expectedCash)
+            {
+                return Json(new {
+                    success = false,
+                    message = $"❌ Số tiền mở két ({startingCash:N0} đ) KHÔNG TRÙNG KHỚP với số tiền kết ca trước ({expectedCash:N0} đ)! Theo yêu cầu của giáo viên, tiền mở két bắt buộc phải khớp 100% với ca trước."
+                });
+            }
+
             var shift = _db.GetActiveShift(user.UserId) ?? _db.CreateShift(user.UserId, startingCash);
             shift.StartingCash = startingCash;
-            return Json(new { success = true });
+            return Json(new { success = true, startingCash = startingCash });
         }
 
         // POST: /Pos/EndShift

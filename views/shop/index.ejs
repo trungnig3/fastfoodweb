@@ -15,6 +15,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
+    <!-- Leaflet & Google Maps style tile integration -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    
     <style>
         :root {
             --font-sans: 'Be Vietnam Pro', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -49,13 +53,15 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
         }
 
         .shop-nav .container {
-            height: 64px;
+            min-height: 68px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 16px;
         }
 
         .shop-brand {
@@ -67,18 +73,63 @@
             align-items: center;
             gap: 10px;
             letter-spacing: -0.02em;
+            flex-shrink: 0;
         }
 
         .shop-brand-badge {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
             background: linear-gradient(135deg, #E11D48 0%, #EA580C 100%);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 10px rgba(225, 29, 72, 0.25);
+        }
+
+        /* Danh mục món ăn trên Header */
+        .header-category-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            padding: 4px 0;
+        }
+        .header-category-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .header-cat-pill {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 9999px;
+            padding: 7px 16px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .header-cat-pill:hover {
+            color: #E11D48;
+            background: #FFF1F2;
+            border-color: #FECDD3;
+            transform: translateY(-1px);
+        }
+        .header-cat-pill.active {
+            background: #E11D48;
+            color: #FFFFFF;
+            border-color: #E11D48;
+            box-shadow: 0 4px 12px rgba(225, 29, 72, 0.28);
         }
 
         .nav-btn-link {
@@ -94,6 +145,7 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            white-space: nowrap;
         }
 
         .nav-btn-link:hover {
@@ -102,11 +154,174 @@
             background: var(--primary-light);
         }
 
+        .nav-btn-primary {
+            background: #E11D48 !important;
+            color: #FFFFFF !important;
+            border-color: #E11D48 !important;
+        }
+        .nav-btn-primary:hover {
+            background: #BE123C !important;
+            color: #FFFFFF !important;
+        }
+
+        /* Thanh Menu Chức Năng Chuyên Biệt */
+        .shop-utility-bar {
+            background: #0F172A;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 10px 0;
+            color: #FFFFFF;
+        }
+        .utility-menu-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .utility-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .utility-item-btn {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #F1F5F9;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            padding: 6px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.18s ease;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .utility-item-btn:hover {
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.35);
+            transform: translateY(-1px);
+        }
+        .utility-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 9999px;
+            letter-spacing: 0.02em;
+        }
+
+        /* Continuous Food Slide Bar (Marquee Chạy Liên Tục) */
+        .food-slidebar-section {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 14px 0 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .food-slidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            margin-bottom: 10px;
+        }
+        .food-slidebar-container {
+            overflow: hidden;
+            width: 100%;
+            position: relative;
+            mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 98%, transparent 100%);
+        }
+        .food-slidebar-track {
+            display: flex;
+            gap: 14px;
+            width: max-content;
+            animation: continuousFoodScroll 40s linear infinite;
+        }
+        .food-slidebar-track:hover {
+            animation-play-state: paused;
+        }
+        @keyframes continuousFoodScroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .slide-food-card {
+            flex: 0 0 auto;
+            width: 250px;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            text-align: left;
+        }
+        .slide-food-card:hover {
+            transform: translateY(-2px);
+            border-color: #E11D48;
+            box-shadow: 0 8px 20px rgba(225, 29, 72, 0.12);
+        }
+        .slide-food-img {
+            width: 58px;
+            height: 58px;
+            border-radius: 9px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #F1F5F9;
+        }
+        .slide-food-info {
+            flex-grow: 1;
+            min-width: 0;
+        }
+        .slide-food-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #0F172A;
+            white-space: normal;
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 3px;
+        }
+        .slide-food-price {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #E11D48;
+        }
+        .slide-quick-add {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: #FFF1F2;
+            color: #E11D48;
+            border: 1px solid #FECDD3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            flex-shrink: 0;
+        }
+        .slide-quick-add:hover {
+            background: #E11D48;
+            color: #FFFFFF;
+            border-color: #E11D48;
+        }
+
         /* Hero Banner */
         .shop-hero {
             background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
             color: #FFFFFF;
-            padding: 40px 0;
+            padding: 36px 0;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
 
@@ -734,56 +949,176 @@
 </head>
 <body>
 
-    <!-- TOPBAR -->
+    <!-- PHẦN ĐẦU TRANG: CHỈ CHỨA DANH MỤC MÓN ĂN VÀ ĐĂNG NHẬP / ĐĂNG KÝ -->
     <header class="shop-nav">
         <div class="container">
-            <a href="/Shop" class="shop-brand">
+            <!-- Brand Logo -->
+            <a href="/Shop" class="shop-brand" title="FastFood Express - Trang Chủ Đặt Món">
                 <span class="shop-brand-badge"><i class="fas fa-hamburger"></i></span>
-                <span>FastFood Express</span>
+                <span class="d-none d-sm-inline">FastFood Express</span>
             </a>
 
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="nav-btn-link text-danger fw-semibold border border-danger-subtle" data-bs-toggle="modal" data-bs-target="#trackOrderModal" onclick="openTrackOrderModal()">
-                    <i class="fas fa-truck-fast text-danger"></i>
-                    <span>Theo Dõi Đơn</span>
+            <!-- DANH MỤC MÓN ĂN TRÊN HEADER -->
+            <nav class="header-category-nav" aria-label="Danh mục thực đơn món ăn">
+                <button type="button" class="header-cat-pill active" data-header-cat="all" onclick="selectCategoryHeader('all', this)" title="Xem tất cả thực đơn">
+                    <i class="fas fa-border-all text-danger"></i> Tất Cả
                 </button>
-                <button type="button" class="nav-btn-link text-warning fw-semibold border border-warning-subtle" data-bs-toggle="modal" data-bs-target="#pointsModal" onclick="openPointsModal()">
-                    <i class="fas fa-coins text-warning"></i>
-                    <span>Tra Cứu Điểm</span>
-                    <% if (typeof customerPoints !== 'undefined' && customerPoints > 0) { %>
-                        <span class="badge bg-danger ms-1" title="Hạng: <%= customerTier %>"><%= customerPoints %>đ</span>
-                    <% } %>
+                <button type="button" class="header-cat-pill" data-header-cat="combo" onclick="selectCategoryHeader('combo', this)" title="Các set Combo tiết kiệm">
+                    <i class="fas fa-fire text-warning"></i> Combo Tiết Kiệm
                 </button>
-                <button type="button" class="nav-btn-link text-primary fw-semibold" onclick="openFloatingAiChat()">
-                    <i class="fas fa-robot text-primary"></i>
-                    <span>Trợ Lý AI</span>
-                </button>
-                <button type="button" class="nav-btn-link" data-bs-toggle="modal" data-bs-target="#feedbackModal">
-                    <i class="fas fa-comment-dots text-muted"></i>
-                    <span>Khiếu Nại / Góp Ý</span>
-                </button>
+                <% if (typeof categories !== 'undefined' && categories && categories.length > 0) { %>
+                    <% categories.forEach(function(cat) { %>
+                        <button type="button" class="header-cat-pill" data-header-cat="<%= cat.CategoryId %>" onclick="selectCategoryHeader('<%= cat.CategoryId %>', this)" title="Xem <%= cat.CategoryName %>">
+                            <% if (cat.CategoryId === 1) { %><i class="fas fa-drumstick-bite text-danger"></i>
+                            <% } else if (cat.CategoryId === 2) { %><i class="fas fa-burger text-primary"></i>
+                            <% } else { %><i class="fas fa-ice-cream text-success"></i><% } %>
+                            <%= cat.CategoryName %>
+                        </button>
+                    <% }); %>
+                <% } %>
+            </nav>
+
+            <!-- CHỨC NĂNG ĐĂNG NHẬP / ĐĂNG KÝ -->
+            <div class="d-flex align-items-center gap-2 flex-shrink-0">
                 <% if (typeof user !== 'undefined' && user) { %>
                     <a href="/Account/Profile" class="nav-btn-link text-dark fw-semibold" title="Xem & Sửa Thông Tin Cá Nhân">
-                        <i class="fas fa-user-circle text-danger"></i> <%= user.FullName %>
-                        <i class="fas fa-pen-to-square text-muted ms-1" style="font-size: 0.72rem;"></i>
+                        <i class="fas fa-user-circle text-danger"></i> <span><%= user.FullName %></span>
                     </a>
-                    <a href="/Account/Logout" class="nav-btn-link text-danger" title="Đăng xuất">
+                    <a href="/Account/Logout" class="nav-btn-link text-danger" title="Đăng xuất khỏi hệ thống">
                         <i class="fas fa-arrow-right-from-bracket"></i>
-                        <span class="d-none d-sm-inline">Đăng xuất</span>
+                        <span class="d-none d-md-inline">Đăng xuất</span>
                     </a>
                 <% } else { %>
-                    <a href="/Account/Login" class="nav-btn-link" title="Đăng nhập">
+                    <a href="/Account/Login" class="nav-btn-link" title="Đăng nhập tài khoản">
                         <i class="fas fa-arrow-right-to-bracket text-muted"></i>
                         <span>Đăng nhập</span>
                     </a>
-                    <a href="/Account/Register" class="nav-btn-link text-danger border-danger-subtle fw-semibold" title="Đăng ký">
-                        <i class="fas fa-user-plus text-danger"></i>
+                    <a href="/Account/Register" class="nav-btn-link nav-btn-primary fw-semibold" title="Đăng ký tài khoản mới">
+                        <i class="fas fa-user-plus"></i>
                         <span>Đăng ký</span>
                     </a>
                 <% } %>
             </div>
         </div>
     </header>
+
+    <!-- THANH MENU CHỨA TẤT CẢ CÁC CHỨC NĂNG (THEO DÕI ĐƠN, TRA CỨU ĐIỂM, TRỢ LÝ AI, KHIẾU NẠI & ĐÁNH GIÁ, GIỎ HÀNG, QUẢN TRỊ) -->
+    <nav class="shop-utility-bar shadow-sm" aria-label="Thanh chức năng dịch vụ FastFood">
+        <div class="container">
+            <div class="utility-menu-wrap">
+                <div class="utility-btn-group">
+                    <button type="button" class="utility-item-btn" data-bs-toggle="modal" data-bs-target="#trackOrderModal" onclick="openTrackOrderModal()" title="Tra cứu tiến độ đơn hàng thời gian thực">
+                        <i class="fas fa-truck-fast text-danger fs-6"></i>
+                        <span>Theo Dõi Đơn Hàng</span>
+                        <span class="badge bg-danger utility-badge">Trực tiếp</span>
+                    </button>
+                    <button type="button" class="utility-item-btn" data-bs-toggle="modal" data-bs-target="#pointsModal" onclick="openPointsModal()" title="Kiểm tra điểm thưởng và hạng thành viên">
+                        <i class="fas fa-coins text-warning fs-6"></i>
+                        <span>Tra Cứu Điểm</span>
+                        <% if (typeof customerPoints !== 'undefined' && customerPoints > 0) { %>
+                            <span class="badge bg-warning text-dark utility-badge fw-bold"><%= customerPoints %> điểm (<%= customerTier %>)</span>
+                        <% } else { %>
+                            <span class="badge bg-light text-dark utility-badge">Tích điểm</span>
+                        <% } %>
+                    </button>
+                    <button type="button" class="utility-item-btn" onclick="openFloatingAiChat()" title="Trợ lý AI Gemini tư vấn món và tự động tạo đơn">
+                        <i class="fas fa-robot text-info fs-6"></i>
+                        <span>Trợ Lý AI Đặt Món</span>
+                        <span class="badge bg-primary utility-badge">Gemini Flash</span>
+                    </button>
+                    <button type="button" class="utility-item-btn" data-bs-toggle="modal" data-bs-target="#feedbackModal" title="Đánh giá 1-5 sao và gửi phản hồi khiếu nại">
+                        <i class="fas fa-comment-dots text-success fs-6"></i>
+                        <span>Khiếu Nại & Đánh Giá</span>
+                        <span class="badge bg-success utility-badge">1 - 5 ⭐</span>
+                    </button>
+                    <button type="button" class="utility-item-btn" onclick="scrollToCart()" title="Xem giỏ hàng và thanh toán trực tuyến">
+                        <i class="fas fa-shopping-bag text-warning fs-6"></i>
+                        <span>Giỏ Hàng</span>
+                        <span class="badge bg-danger utility-badge" id="utilityCartBadge">0 món</span>
+                    </button>
+                    <% if (typeof user !== 'undefined' && user) { %>
+                        <% if (user.Role === 'Admin') { %>
+                            <a href="/Admin" class="utility-item-btn" title="Vào trang quản trị quản lý hệ thống">
+                                <i class="fas fa-shield-halved text-info fs-6"></i>
+                                <span>Quản Trị</span>
+                                <span class="badge bg-primary utility-badge">Admin</span>
+                            </a>
+                        <% } %>
+                        <% if (user.Role === 'Cashier' || user.Role === 'Admin') { %>
+                            <a href="/Pos" class="utility-item-btn" title="Chuyển sang giao diện màn hình bán lẻ POS">
+                                <i class="fas fa-cash-register text-success fs-6"></i>
+                                <span>Thu Ngân POS</span>
+                                <span class="badge bg-success utility-badge">Bán lẻ</span>
+                            </a>
+                        <% } %>
+                    <% } %>
+                </div>
+
+                <div class="d-none d-xl-flex align-items-center gap-3 small">
+                    <span class="text-white opacity-75"><i class="fas fa-motorcycle text-warning me-1"></i> Giao nhanh 30 phút (Freeship 2km)</span>
+                    <span class="text-white opacity-50">|</span>
+                    <a href="tel:19006868" class="text-white text-decoration-none fw-bold"><i class="fas fa-phone-volume text-danger me-1"></i> Hotline: 1900 6868</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PHẦN SLIDE BAR CHO CÁC MÓN ĂN CHẠY LIÊN TỤC (INFINITE MARQUEE SLIDER) -->
+    <section class="food-slidebar-section" aria-label="Các món ăn nổi bật chạy liên tục">
+        <div class="container-fluid px-3 px-xl-4">
+            <div class="food-slidebar-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-danger rounded-pill px-3 py-1 font-monospace" style="font-size: 0.74rem;">
+                        <i class="fas fa-fire me-1"></i> THỰC ĐƠN ĐẶC SẮC
+                    </span>
+                    <span class="fw-bold text-dark small d-none d-sm-inline">Phục vụ món ăn tươi nóng mỗi ngày</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-dark border small" title="Số lượng món trong hệ thống">
+                        <i class="fas fa-utensils text-danger me-1"></i> <%= products.length %> món ngon
+                    </span>
+                </div>
+            </div>
+
+            <div class="food-slidebar-container">
+                <div class="food-slidebar-track">
+                    <% /* Chạy 2 vòng lặp liên tiếp để tạo marquee vô tận không bị khựng */ %>
+                    <% for (let loopIdx = 0; loopIdx < 2; loopIdx++) { %>
+                        <% products.forEach(function(item) { %>
+                            <% const isSlideOut = item.StockQuantity <= 0 || !item.IsActive; %>
+                            <div class="slide-food-card <%= isSlideOut ? 'opacity-75' : '' %>"
+                                 onclick="<% if (!isSlideOut) { %>addToCart(<%= item.ProductId %>, '<%= item.ProductName.replace(/'/g, "\\'") %>', <%= item.Price %>)<% } %>"
+                                 title="<%= isSlideOut ? 'Món đã tạm hết hàng trong kho' : 'Bấm để thêm ' + item.ProductName + ' vào giỏ hàng' %>">
+                                <img src="<%= item.ImageURL || 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500' %>" 
+                                     class="slide-food-img" 
+                                     alt="<%= item.ProductName %>" 
+                                     loading="lazy" 
+                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=500';">
+                                <div class="slide-food-info">
+                                    <div class="slide-food-title" title="<%= item.ProductName %>"><%= item.ProductName %></div>
+                                    <div class="d-flex align-items-center justify-content-between mt-1">
+                                        <span class="slide-food-price tabular-nums"><%= Number(item.Price).toLocaleString('vi-VN') %> đ</span>
+                                        <% if (isSlideOut) { %>
+                                            <span class="badge bg-danger text-white" style="font-size: 0.62rem;">Hết hàng</span>
+                                        <% } else if (item.IsCombo) { %>
+                                            <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.62rem;">Combo Hot</span>
+                                        <% } else { %>
+                                            <span class="badge bg-danger-subtle text-danger" style="font-size: 0.62rem;">Bán chạy</span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                <% if (!isSlideOut) { %>
+                                    <button type="button" class="slide-quick-add" title="Thêm ngay vào giỏ" onclick="event.stopPropagation(); addToCart(<%= item.ProductId %>, '<%= item.ProductName.replace(/'/g, "\\'") %>', <%= item.Price %>)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                <% } %>
+                            </div>
+                        <% }); %>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- HERO BANNER -->
     <section class="shop-hero">
@@ -924,7 +1259,7 @@
             </div>
 
             <!-- CỘT 2: THỰC ĐƠN MÓN ĂN CHÍNH (GIỮA) -->
-            <div class="col-xxl-5 col-xl-5 col-lg-4 col-md-7">
+            <div class="col-xxl-5 col-xl-5 col-lg-4 col-md-7" id="menuMainSection">
                 <!-- THANH TIÊU ĐỀ & ĐẾM MÓN -->
                 <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
                     <div>
@@ -1060,10 +1395,46 @@
                     </div>
 
                     <div class="mb-2">
-                        <label class="form-label small fw-semibold text-muted text-uppercase mb-1" style="font-size: 0.75rem;">Địa chỉ giao hàng tận nơi <span class="text-danger">*</span>:</label>
-                        <textarea class="form-control form-control-custom w-100 py-1" id="deliveryAddress" rows="2" 
-                                  placeholder="Số nhà, tên đường, phường/xã, quận/huyện..." 
-                                  oninput="onAddressChanged()"></textarea>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-dark text-uppercase mb-0" style="font-size: 0.75rem;">
+                                Địa chỉ & Vị trí Google Map <span class="text-danger">* (Bắt buộc)</span>:
+                            </label>
+                            <button type="button" class="btn btn-sm btn-link p-0 text-primary text-decoration-none fw-bold" style="font-size: 0.73rem;" onclick="locateUserGPS()">
+                                <i class="fas fa-location-crosshairs text-danger me-1"></i>Định vị GPS
+                            </button>
+                        </div>
+                        <div class="input-group input-group-sm mb-1">
+                            <input type="text" class="form-control form-control-custom" id="deliveryAddress" 
+                                   placeholder="Số nhà, đường, phường/xã, quận/huyện..." 
+                                   oninput="onAddressChanged()" onchange="geocodeAddressFromInput()" />
+                            <button type="button" class="btn btn-dark fw-bold px-2" onclick="geocodeAddressFromInput()" title="Định vị vị trí địa chỉ trên Google Map">
+                                <i class="fas fa-magnifying-glass-location text-warning me-1"></i>Map
+                            </button>
+                        </div>
+
+                        <!-- BẢN ĐỒ BẮT BUỘC BẰNG GOOGLE MAP TILES / LEAFLET ĐỂ XÁC ĐỊNH VỊ TRÍ THỰC TẾ -->
+                        <div class="position-relative mt-2">
+                            <div id="deliveryMap" style="height: 180px; width: 100%; border-radius: 10px; border: 1px solid #CBD5E1; z-index: 1;"></div>
+                            <div class="position-absolute top-0 end-0 m-1 px-2 py-1 bg-white border rounded shadow-sm text-muted" style="z-index: 1000; font-size: 0.68rem;">
+                                <i class="fas fa-hand-pointer text-primary me-1"></i>Chạm/Kéo ghim vị trí
+                            </div>
+                        </div>
+
+                        <!-- THÔNG TIN KHOẢNG CÁCH, PHÍ SHIP & THỜI GIAN GIAO HÀNG THỰC TẾ DỰA TRÊN GOOGLE MAP -->
+                        <div id="deliveryMapDetails" class="p-2 mt-2 rounded-2 border bg-light text-dark" style="font-size: 0.76rem;">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span><i class="fas fa-store text-danger me-1"></i><b>Cửa hàng:</b> 123 Đường Ẩm Thực, Q.1</span>
+                                <span class="badge bg-danger text-white font-monospace" id="mapDistanceBadge">0.0 km</span>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <span><i class="fas fa-clock text-warning me-1"></i><b>Thời gian giao hàng thực tế:</b></span>
+                                <b class="text-primary" id="mapEstTimeText">Chờ chọn vị trí...</b>
+                            </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <span><i class="fas fa-truck text-success me-1"></i><b>Phí vận chuyển thực tế:</b></span>
+                                <b class="text-danger" id="mapShipFeeText">0 đ</b>
+                            </div>
+                        </div>
                         <div id="deliveryFeeStatus" class="small mt-1 fw-semibold"></div>
                     </div>
 
@@ -1764,6 +2135,7 @@
         let cart = [];
         let shippingFee = 0;
         let currentCustomer = null;
+        let currentCustomerPhone = '';
         let pointsDiscountAmount = 0;
         let pointsToUse = 0;
         let isUsingPoints = false;
@@ -1976,6 +2348,34 @@
             renderCart();
         }
 
+        function selectCategoryHeader(catId, btn) {
+            document.querySelectorAll('.header-cat-pill').forEach(function(b) { b.classList.remove('active'); });
+            if (btn) btn.classList.add('active');
+
+            // Đồng bộ trạng thái active với sidebar nếu có
+            document.querySelectorAll('.cat-menu-item').forEach(function(b) {
+                b.classList.remove('active');
+            });
+
+            // Lọc danh sách món ăn
+            filterMenu(catId, null);
+
+            // Cuộn mượt xuống khu vực thực đơn chính
+            const target = document.getElementById('menuMainSection') || document.getElementById('foodGrid');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function scrollToCart() {
+            const cartEl = document.getElementById('shopCartStickyCard') || document.querySelector('.shop-cart-panel');
+            if (cartEl) {
+                cartEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                cartEl.classList.add('border-danger', 'shadow-lg');
+                setTimeout(function() { cartEl.classList.remove('border-danger', 'shadow-lg'); }, 1200);
+            }
+        }
+
         function filterMenu(catId, btn) {
             document.querySelectorAll('.filter-category-btn, .cat-menu-item').forEach(function(b) { b.classList.remove('active'); });
             if (btn) btn.classList.add('active');
@@ -2028,28 +2428,218 @@
             }
         }
 
-        function onAddressChanged() {
-            const addrEl = document.getElementById('deliveryAddress');
-            const addr = addrEl ? addrEl.value.trim() : '';
-            const statusEl = document.getElementById('deliveryFeeStatus');
-            if (!addr) {
-                shippingFee = 0;
-                if (statusEl) statusEl.innerHTML = '';
-                renderCart();
-                return;
-            }
+        // ==================== QUẢN LÝ BẢN ĐỒ GOOGLE MAP XÁC ĐỊNH VỊ TRÍ GIAO HÀNG ====================
+        const STORE_LAT = 10.7769;
+        const STORE_LNG = 106.7009;
+        var deliveryMapInstance = null;
+        var customerMapMarker = null;
+        var storeMapMarker = null;
+        var routeMapPolyline = null;
+        var deliveryLat = 10.7820;
+        var deliveryLng = 106.7080;
+        var deliveryDistanceKm = 1.8;
+        var deliveryEstMinutes = 20;
+
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function calculateDeliveryMetrics(lat, lng) {
+            deliveryLat = lat;
+            deliveryLng = lng;
+            const dist = haversineDistance(STORE_LAT, STORE_LNG, lat, lng);
+            deliveryDistanceKm = parseFloat(dist.toFixed(1));
 
             let subTotal = 0;
             cart.forEach(function(i) { subTotal += i.price * i.quantity; });
 
-            if (subTotal >= 150000) {
+            if (subTotal >= 150000 && deliveryDistanceKm <= 2.0) {
                 shippingFee = 0;
-                if (statusEl) statusEl.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Đơn hàng từ 150k - Miễn phí vận chuyển!</span>';
+            } else if (deliveryDistanceKm <= 2.0) {
+                shippingFee = 12000;
+            } else if (deliveryDistanceKm <= 5.0) {
+                shippingFee = 15000 + Math.round((deliveryDistanceKm - 2.0) * 3000);
+            } else if (deliveryDistanceKm <= 12.0) {
+                shippingFee = 24000 + Math.round((deliveryDistanceKm - 5.0) * 4000);
             } else {
-                shippingFee = 15000;
-                if (statusEl) statusEl.innerHTML = '<span class="text-primary"><i class="fas fa-truck me-1"></i>Phí giao hàng tận nơi: <b>' + formatMoney(shippingFee) + '</b></span>';
+                shippingFee = 52000 + Math.round((deliveryDistanceKm - 12.0) * 5000);
             }
+
+            const minTime = 12 + Math.round(deliveryDistanceKm * 3);
+            const maxTime = minTime + 7;
+            deliveryEstMinutes = minTime;
+
+            const badgeDist = document.getElementById('mapDistanceBadge');
+            if (badgeDist) badgeDist.textContent = deliveryDistanceKm + ' km';
+
+            const textTime = document.getElementById('mapEstTimeText');
+            if (textTime) textTime.textContent = minTime + ' - ' + maxTime + ' phút';
+
+            const textShip = document.getElementById('mapShipFeeText');
+            if (textShip) {
+                textShip.textContent = (subTotal >= 150000 && deliveryDistanceKm <= 2.0) ? 'Miễn phí (Đơn >= 150k)' : formatMoney(shippingFee);
+            }
+
+            const statusEl = document.getElementById('deliveryFeeStatus');
+            if (statusEl) {
+                statusEl.innerHTML = '<span class="text-success small"><i class="fas fa-location-dot me-1"></i>Đã định vị Google Map (' + deliveryDistanceKm + ' km - giao trong ~' + minTime + ' phút)</span>';
+            }
+
+            if (routeMapPolyline && deliveryMapInstance) {
+                routeMapPolyline.setLatLngs([
+                    [STORE_LAT, STORE_LNG],
+                    [lat, lng]
+                ]);
+            }
+
             renderCart();
+        }
+
+        function initDeliveryMap() {
+            const mapContainer = document.getElementById('deliveryMap');
+            if (!mapContainer || typeof L === 'undefined') return;
+            if (deliveryMapInstance) return;
+
+            try {
+                deliveryMapInstance = L.map('deliveryMap', {
+                    center: [STORE_LAT, STORE_LNG],
+                    zoom: 13,
+                    zoomControl: true
+                });
+
+                L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                    maxZoom: 20,
+                    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                    attribution: 'Google Maps'
+                }).addTo(deliveryMapInstance);
+
+                const storeIcon = L.divIcon({
+                    className: 'custom-map-icon-store',
+                    html: '<div style="background:#E11D48;color:white;padding:3px 7px;border-radius:12px;font-weight:bold;font-size:10px;box-shadow:0 2px 6px rgba(0,0,0,0.3);"><i class="fas fa-store me-1"></i>Quán FastFood</div>',
+                    iconSize: [95, 26],
+                    iconAnchor: [47, 13]
+                });
+                storeMapMarker = L.marker([STORE_LAT, STORE_LNG], { icon: storeIcon }).addTo(deliveryMapInstance);
+                storeMapMarker.bindPopup('<b>FastFood Express Central</b><br>123 Đường Ẩm Thực, Q.1');
+
+                const customerIcon = L.divIcon({
+                    className: 'custom-map-icon-cust',
+                    html: '<div style="background:#0F172A;color:#FACC15;padding:3px 7px;border-radius:12px;font-weight:bold;font-size:10px;border:1px solid #FACC15;box-shadow:0 2px 6px rgba(0,0,0,0.3);"><i class="fas fa-location-dot me-1"></i>Giao đến đây</div>',
+                    iconSize: [95, 26],
+                    iconAnchor: [47, 13]
+                });
+
+                customerMapMarker = L.marker([deliveryLat, deliveryLng], {
+                    draggable: true,
+                    icon: customerIcon
+                }).addTo(deliveryMapInstance);
+
+                routeMapPolyline = L.polyline([
+                    [STORE_LAT, STORE_LNG],
+                    [deliveryLat, deliveryLng]
+                ], { color: '#E11D48', weight: 3, dashArray: '5, 5' }).addTo(deliveryMapInstance);
+
+                customerMapMarker.on('dragend', function(e) {
+                    const pos = e.target.getLatLng();
+                    calculateDeliveryMetrics(pos.lat, pos.lng);
+                    reverseGeocodeMap(pos.lat, pos.lng);
+                });
+
+                deliveryMapInstance.on('click', function(e) {
+                    customerMapMarker.setLatLng(e.latlng);
+                    calculateDeliveryMetrics(e.latlng.lat, e.latlng.lng);
+                    reverseGeocodeMap(e.latlng.lat, e.latlng.lng);
+                });
+
+                calculateDeliveryMetrics(deliveryLat, deliveryLng);
+            } catch (err) {
+                console.error('Delivery map init error:', err);
+            }
+        }
+
+        function geocodeAddressFromInput() {
+            const addrEl = document.getElementById('deliveryAddress');
+            const addr = addrEl ? addrEl.value.trim() : '';
+            if (!addr) {
+                showShopToast('Vui lòng nhập địa chỉ nhận hàng!', 'warning');
+                return;
+            }
+
+            fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(addr + ', Việt Nam'))
+                .then(function(r) { return r.json(); })
+                .then(function(results) {
+                    if (results && results.length > 0) {
+                        const lat = parseFloat(results[0].lat);
+                        const lng = parseFloat(results[0].lon);
+
+                        if (customerMapMarker && deliveryMapInstance) {
+                            customerMapMarker.setLatLng([lat, lng]);
+                            deliveryMapInstance.setView([lat, lng], 15);
+                            calculateDeliveryMetrics(lat, lng);
+                            showShopToast('Đã xác định vị trí trên Google Map!', 'success');
+                        }
+                    } else {
+                        calculateDeliveryMetrics(deliveryLat, deliveryLng);
+                    }
+                })
+                .catch(function() {
+                    calculateDeliveryMetrics(deliveryLat, deliveryLng);
+                });
+        }
+
+        function reverseGeocodeMap(lat, lng) {
+            fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.display_name) {
+                        const addrInput = document.getElementById('deliveryAddress');
+                        if (addrInput && (!addrInput.value || addrInput.value.trim().length < 4)) {
+                            addrInput.value = data.display_name.split(',').slice(0, 4).join(',');
+                        }
+                    }
+                })
+                .catch(function() {});
+        }
+
+        function locateUserGPS() {
+            if (!navigator.geolocation) {
+                return showShopToast('Trình duyệt không hỗ trợ định vị GPS tự động!', 'warning');
+            }
+            showShopToast('Đang quét vị trí GPS...', 'info');
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (customerMapMarker && deliveryMapInstance) {
+                        customerMapMarker.setLatLng([lat, lng]);
+                        deliveryMapInstance.setView([lat, lng], 15);
+                        calculateDeliveryMetrics(lat, lng);
+                        reverseGeocodeMap(lat, lng);
+                        showShopToast('Đã định vị thành công vị trí của bạn trên Google Map!', 'success');
+                    }
+                },
+                function() {
+                    showShopToast('Không thể lấy GPS tự động. Vui lòng bấm chọn vị trí trực tiếp trên bản đồ!', 'warning');
+                },
+                { enableHighAccuracy: true, timeout: 8000 }
+            );
+        }
+
+        function onAddressChanged() {
+            const addrEl = document.getElementById('deliveryAddress');
+            const addr = addrEl ? addrEl.value.trim() : '';
+            if (addr) {
+                calculateDeliveryMetrics(deliveryLat, deliveryLng);
+            } else {
+                renderCart();
+            }
         }
 
         function renderCart() {
@@ -2144,6 +2734,8 @@
             if (badgeEl) badgeEl.innerText = totalCount + ' món';
             const tabBadge = document.getElementById('cartCountBadgeTab');
             if (tabBadge) tabBadge.innerText = String(totalCount);
+            const utilityBadge = document.getElementById('utilityCartBadge');
+            if (utilityBadge) utilityBadge.innerText = totalCount + ' món';
             if (subTotalEl) subTotalEl.innerText = formatMoney(subTotal);
             if (finalTotalEl) finalTotalEl.innerText = formatMoney(finalTotal);
         }
@@ -2162,7 +2754,10 @@
         }
 
         // ==================== ĐẶT HÀNG (CHECKOUT) ====================
+        var isShopSubmitting = false;
+
         function checkoutOrder() {
+            if (isShopSubmitting) return;
             if (cart.length === 0) return showShopToast('Vui lòng chọn ít nhất 1 món ăn vào giỏ hàng!', 'warning');
             
             const phoneEl = document.getElementById('custPhone');
@@ -2190,6 +2785,7 @@
             const method = methodEl ? methodEl.value : 'COD';
             const btn = document.getElementById('btnSubmitOrder');
 
+            isShopSubmitting = true;
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang xử lý đơn...';
@@ -2214,7 +2810,15 @@
                 if (data.success) {
                     if (data.isRedirect && data.redirectUrl) {
                         window.location.href = data.redirectUrl;
-                    } else {
+                        return;
+                    }
+                    try {
+                        // Xóa sạch các thông báo lỗi cũ
+                        const toastCont = document.getElementById('shopToastContainer');
+                        if (toastCont) {
+                            toastCont.querySelectorAll('.toast.bg-danger').forEach(function(el) { el.remove(); });
+                        }
+
                         document.getElementById('shopSuccessOrderCode').textContent = data.orderCode;
                         const shipperEl = document.getElementById('shopSuccessShipper');
                         if (data.driverName) {
@@ -2268,6 +2872,8 @@
                         renderCart();
                         if (document.getElementById('deliveryAddress')) document.getElementById('deliveryAddress').value = '';
                         if (document.getElementById('deliveryFeeStatus')) document.getElementById('deliveryFeeStatus').innerHTML = '';
+                    } catch (eRender) {
+                        console.error('Shop checkout render error:', eRender);
                     }
                 } else {
                     showShopToast('Lỗi: ' + (data.message || 'Không thể đặt hàng.'), 'error');
@@ -2275,6 +2881,7 @@
             })
             .catch(function() { showShopToast('Lỗi kết nối khi gửi đơn hàng!', 'error'); })
             .finally(function() {
+                setTimeout(function() { isShopSubmitting = false; }, 600);
                 if (btn) {
                     btn.disabled = false;
                     btn.innerHTML = 'XÁC NHẬN ĐẶT HÀNG';
@@ -2296,7 +2903,7 @@
                 trackPollInterval = null;
             }
             const phoneEl = document.getElementById('custPhone');
-            const query = prefillCode || (phoneEl ? phoneEl.value.trim() : '') || (currentCustomerPhone || '');
+            const query = prefillCode || (phoneEl ? phoneEl.value.trim() : '') || (typeof currentCustomer !== 'undefined' && currentCustomer ? currentCustomer.phone : '') || (typeof currentCustomerPhone !== 'undefined' ? currentCustomerPhone : '') || '';
             const input = document.getElementById('trackQueryInput');
             if (input && query) input.value = query;
             const modalEl = document.getElementById('trackOrderModal');
@@ -2907,6 +3514,8 @@
         }
 
         window.addEventListener('DOMContentLoaded', function() {
+            initDeliveryMap();
+
             const savedTrackCode = localStorage.getItem('fastfood_track_code');
             if (savedTrackCode) {
                 localStorage.removeItem('fastfood_track_code');

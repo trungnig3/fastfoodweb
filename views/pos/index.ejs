@@ -536,11 +536,11 @@
             transform: none;
         }
 
-        /* Floating Toast */
+        /* Floating Toast Notification (Góc phải dưới, tránh bị che hoặc lỗi góc trái) */
         .pos-toast-wrap {
             position: fixed;
-            bottom: 20px;
-            left: 20px;
+            bottom: 24px;
+            right: 24px;
             z-index: 9999;
             display: flex;
             flex-direction: column;
@@ -767,23 +767,71 @@
 
     <!-- START CASH MODAL (Shown when shift starts with 0 cash) -->
     <% if (showStartCashModal) { %>
-    <div class="modal fade show" id="startCashModal" tabindex="-1" style="display: block; background: rgba(15, 23, 42, 0.7);" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-body p-4 text-center">
-                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 52px; height: 52px; background: #FFF1F2; color: #E11D48; font-size: 1.4rem;">
+    <div class="modal fade show" id="startCashModal" tabindex="-1" style="display: block; background: rgba(15, 23, 42, 0.78); z-index: 1060;" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header border-bottom py-3 bg-light">
+                    <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-2 mb-0">
+                        <i class="fas fa-vault text-danger"></i> Mở Két Bắt Đầu Ca Làm Việc
+                    </h6>
+                    <span class="badge bg-danger rounded-pill px-2 py-1 small">Bắt buộc</span>
+                </div>
+                <div class="modal-body p-4 text-center bg-white">
+                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width: 56px; height: 56px; background: #FFF1F2; color: #E11D48; font-size: 1.5rem;">
                         <i class="fas fa-wallet"></i>
                     </div>
-                    <h5 class="fw-bold mb-1">Mở Két Bắt Đầu Ca</h5>
-                    <p class="text-muted small mb-3">Vui lòng kiểm tra và nhập số tiền lẻ ban đầu trong két thu ngân:</p>
-                    
-                    <div class="input-group mb-3">
-                        <input type="number" id="startingCashInput" class="form-control form-control-custom text-center fs-5 fw-bold text-dark" value="500000" min="0" step="50000" />
-                        <span class="input-group-text bg-light">đ</span>
+                    <h5 class="fw-bold mb-1 text-dark">Kiểm Tra Tiền Mặt Trong Két</h5>
+                    <p class="text-muted small mb-3">Xác nhận số tiền mặt thực tế trong két trước khi thực hiện bán hàng</p>
+
+                    <!-- KHỐI THÔNG TIN BÀN GIAO TỪ CA TRƯỚC -->
+                    <div class="p-3 rounded-3 text-start mb-3" style="background: #F8FAFC; border: 1px dashed #CBD5E1;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small"><i class="fas fa-user-clock me-1 text-primary"></i> Ca trước bàn giao:</span>
+                            <span class="fw-bold text-dark small"><%= typeof previousCashierName !== 'undefined' ? previousCashierName : 'Nguyễn Thị Lan (Thu ngân)' %></span>
+                        </div>
+                        <% if (typeof previousShift !== 'undefined' && previousShift && previousShift.EndTime) { %>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small"><i class="far fa-clock me-1"></i> Thời điểm chốt ca trước:</span>
+                            <span class="text-muted small tabular-nums"><%= new Date(previousShift.EndTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) %> - <%= new Date(previousShift.EndTime).toLocaleDateString('vi-VN') %></span>
+                        </div>
+                        <% } %>
+                        <div class="d-flex justify-content-between align-items-center pt-2 mt-1 border-top">
+                            <span class="fw-bold text-dark small"><i class="fas fa-money-bill-wave me-1 text-success"></i> Tiền mặt ca trước chốt bàn giao:</span>
+                            <span class="fw-bold text-danger fs-5 tabular-nums"><%= Number(expectedPreviousCash).toLocaleString('vi-VN') %> đ</span>
+                        </div>
                     </div>
 
-                    <button type="button" class="btn-brand-primary w-100 justify-content-center py-2 fs-6" onclick="saveStartingCash()">
-                        <i class="fas fa-key me-1"></i> Xác Nhận Mở Ca
+                    <!-- QUY ĐỊNH BẮT BUỘC CỦA GIÁO VIÊN -->
+                    <div class="alert alert-warning py-2 px-3 small text-start rounded-3 mb-3 d-flex align-items-start gap-2 border-warning-subtle" style="background: #FFFBEB;">
+                        <i class="fas fa-triangle-exclamation text-warning fs-5 mt-1 flex-shrink-0"></i>
+                        <div style="font-size: 0.82rem; line-height: 1.4;">
+                            <strong>Yêu cầu của Giáo Viên:</strong> Khi mở két thì số tiền <u>phải trùng khớp 100%</u> với số tiền của ca trước (<strong><%= Number(expectedPreviousCash).toLocaleString('vi-VN') %> đ</strong>). Hệ thống sẽ kiểm tra và chỉ cho phép mở ca khi số tiền hoàn toàn trùng khớp.
+                        </div>
+                    </div>
+
+                    <!-- Ô NHẬP TIỀN THỰC ĐẾM MỞ KÉT -->
+                    <div class="mb-3 text-start">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-semibold text-muted text-uppercase mb-0">Số tiền mở két nhập vào:</label>
+                            <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold text-primary" onclick="autoFillExpectedCash()">
+                                <i class="fas fa-magic me-1"></i> Lấy đúng ca trước
+                            </button>
+                        </div>
+                        <div class="input-group">
+                            <input type="number" id="startingCashInput" class="form-control form-control-custom text-center fs-5 fw-bold text-dark" value="<%= expectedPreviousCash %>" min="0" step="1000" oninput="validateStartingCashMatch()" />
+                            <span class="input-group-text bg-light fw-bold text-muted">đ</span>
+                        </div>
+                        
+                        <!-- CẢNH BÁO TRÙNG KHỚP THỜI GIAN THỰC -->
+                        <div id="startingCashMatchAlert" class="mt-2 small text-start"></div>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 py-1 mb-3 fw-semibold text-muted" onclick="autoFillExpectedCash()">
+                        <i class="fas fa-arrow-rotate-right me-1 text-primary"></i> Tự động đồng bộ đúng số tiền ca trước: <strong><%= Number(expectedPreviousCash).toLocaleString('vi-VN') %> đ</strong>
+                    </button>
+
+                    <button type="button" id="btnConfirmStartCash" class="btn-brand-primary w-100 justify-content-center py-2 fs-6 shadow-sm" onclick="saveStartingCash()">
+                        <i class="fas fa-key me-1"></i> Xác Nhận Mở Két Bắt Đầu Ca
                     </button>
                 </div>
             </div>
@@ -920,6 +968,14 @@
         function showPosToast(message, type) {
             type = type || 'success';
             var wrap = document.getElementById('posToastWrap');
+            if (!wrap) return;
+
+            // Nếu thông báo thành công, tự động xóa sạch mọi lỗi cũ tồn đọng ở góc trái
+            if (type === 'success') {
+                var oldErrors = wrap.querySelectorAll('.pos-toast.toast-error');
+                oldErrors.forEach(function(e) { if (e.parentNode) e.parentNode.removeChild(e); });
+            }
+
             var t = document.createElement('div');
             t.className = 'pos-toast toast-' + type;
             var icon = '<i class="fas fa-check-circle text-success fs-6"></i>';
@@ -932,7 +988,7 @@
                 t.style.transform = 'translateY(10px)';
                 t.style.transition = 'all 0.2s';
                 setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 200);
-            }, 3000);
+            }, 3500);
         }
 
         // Cart State
@@ -941,6 +997,7 @@
         var activePaymentMethod = 'Tiền mặt';
         var currentFilterCat = 'all';
         var lastCompletedOrder = null;
+        var isPosSubmitting = false;
 
         function formatVND(num) {
             return Number(num).toLocaleString('vi-VN') + ' đ';
@@ -1099,9 +1156,12 @@
             }
 
             var finalTotal = Math.max(0, subTotal - discount);
-            document.getElementById('cartSubTotalDisplay').textContent = formatVND(subTotal);
-            document.getElementById('cartFinalTotalDisplay').textContent = formatVND(finalTotal);
-            document.getElementById('btnPayAmount').textContent = formatVND(finalTotal);
+            var subTotalEl = document.getElementById('cartSubTotalDisplay');
+            if (subTotalEl) subTotalEl.textContent = formatVND(subTotal);
+            var finalTotalEl = document.getElementById('cartFinalTotalDisplay');
+            if (finalTotalEl) finalTotalEl.textContent = formatVND(finalTotal);
+            var btnPayEl = document.getElementById('btnPayAmount');
+            if (btnPayEl) btnPayEl.textContent = formatVND(finalTotal);
 
             calculateChange();
         }
@@ -1193,6 +1253,7 @@
 
         // Submit Checkout
         function submitPosOrder() {
+            if (isPosSubmitting) return;
             if (posCart.length === 0) {
                 showPosToast('Giỏ hàng trống!', 'warning');
                 return;
@@ -1202,8 +1263,11 @@
             var usePoints = document.getElementById('chkUseLoyaltyPoints')?.checked || false;
             var btn = document.getElementById('btnSubmitCheckout');
 
-            btn.disabled = true;
-            btn.innerHTML = '<span><i class="fas fa-spinner fa-spin me-1"></i> ĐANG XỬ LÝ...</span>';
+            isPosSubmitting = true;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span><i class="fas fa-spinner fa-spin me-1"></i> ĐANG XỬ LÝ...</span>';
+            }
 
             var payload = {
                 Items: posCart.map(function(i) { return { Id: i.id, Quantity: i.quantity }; }),
@@ -1223,58 +1287,67 @@
                 if (data.success) {
                     if (data.isRedirect && data.redirectUrl) {
                         window.location.href = data.redirectUrl;
-                    } else {
-                        var phoneVal = (document.getElementById('txtPhoneInput').value || '').trim();
-                        var cashGivenNum = parseFloat(document.getElementById('cashGivenInput').value) || 0;
+                        return;
+                    }
+
+                    try {
+                        var phoneVal = (document.getElementById('txtPhoneInput')?.value || '').trim();
+                        var cashGivenNum = parseFloat(document.getElementById('cashGivenInput')?.value) || 0;
                         var discountEl = document.getElementById('cartDiscountRow');
                         var isDiscountActive = discountEl && !discountEl.classList.contains('d-none');
+                        var finalTotalText = document.getElementById('cartFinalTotalDisplay')?.textContent || '0 đ';
 
-                        try {
-                            lastCompletedOrder = {
-                                orderCode: data.orderCode,
-                                items: JSON.parse(JSON.stringify(posCart)),
-                                subtotal: document.getElementById('cartSubTotalDisplay').textContent,
-                                discount: isDiscountActive ? document.getElementById('cartDiscountDisplay').textContent : '0 đ',
-                                totalAmount: document.getElementById('cartFinalTotalDisplay').textContent,
-                                paymentMethod: activePaymentMethod === 'VnPay' ? 'VNPAY QR' : 'Tiền mặt',
-                                cashGiven: activePaymentMethod === 'Cash' ? (cashGivenNum > 0 ? formatVND(cashGivenNum) : document.getElementById('cartFinalTotalDisplay').textContent) : '0 đ',
-                                change: activePaymentMethod === 'Cash' ? document.getElementById('cashChangeDisplay').textContent : '0 đ',
-                                customer: activeCustomer ? activeCustomer.name + ' (' + activeCustomer.phone + ')' : (phoneVal ? phoneVal : 'Khách lẻ tại quầy'),
-                                cashier: '<%= cashierName %>',
-                                time: new Date().toLocaleString('vi-VN')
-                            };
-                        } catch (errBuild) {
-                            console.error('Lỗi khởi tạo lastCompletedOrder:', errBuild);
-                            lastCompletedOrder = {
-                                orderCode: data.orderCode,
-                                items: [],
-                                subtotal: '0 đ',
-                                discount: '0 đ',
-                                totalAmount: '0 đ',
-                                paymentMethod: activePaymentMethod === 'VnPay' ? 'VNPAY QR' : 'Tiền mặt',
-                                cashGiven: '0 đ',
-                                change: '0 đ',
-                                customer: 'Khách lẻ',
-                                cashier: '<%= cashierName %>',
-                                time: new Date().toLocaleString('vi-VN')
-                            };
+                        lastCompletedOrder = {
+                            orderCode: data.orderCode,
+                            items: JSON.parse(JSON.stringify(posCart)),
+                            subtotal: document.getElementById('cartSubTotalDisplay')?.textContent || '0 đ',
+                            discount: isDiscountActive ? (document.getElementById('cartDiscountDisplay')?.textContent || '0 đ') : '0 đ',
+                            totalAmount: finalTotalText,
+                            paymentMethod: activePaymentMethod === 'VnPay' ? 'VNPAY QR' : 'Tiền mặt',
+                            cashGiven: activePaymentMethod === 'Tiền mặt' ? (cashGivenNum > 0 ? formatVND(cashGivenNum) : finalTotalText) : '0 đ',
+                            change: activePaymentMethod === 'Tiền mặt' ? (document.getElementById('cashChangeDisplay')?.textContent || '0 đ') : '0 đ',
+                            customer: activeCustomer ? activeCustomer.name + ' (' + activeCustomer.phone + ')' : (phoneVal ? phoneVal : 'Khách lẻ tại quầy'),
+                            cashier: '<%= cashierName %>',
+                            time: new Date().toLocaleString('vi-VN')
+                        };
+
+                        var codeEl = document.getElementById('successOrderCode');
+                        if (codeEl) codeEl.textContent = data.orderCode;
+                        var methodEl = document.getElementById('successPaymentMethod');
+                        if (methodEl) methodEl.textContent = lastCompletedOrder.paymentMethod;
+                        var totalEl = document.getElementById('successTotalAmount');
+                        if (totalEl) totalEl.textContent = lastCompletedOrder.totalAmount;
+
+                        var modalEl = document.getElementById('orderSuccessModal');
+                        if (modalEl && typeof bootstrap !== 'undefined') {
+                            var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                            modal.show();
                         }
-
-                        document.getElementById('successOrderCode').textContent = data.orderCode;
-                        document.getElementById('successPaymentMethod').textContent = lastCompletedOrder.paymentMethod;
-                        document.getElementById('successTotalAmount').textContent = lastCompletedOrder.totalAmount;
-
-                        var modal = new bootstrap.Modal(document.getElementById('orderSuccessModal'));
-                        modal.show();
 
                         // Reset cart state
                         posCart = [];
                         activeCustomer = null;
-                        document.getElementById('txtPhoneInput').value = '';
-                        document.getElementById('cashGivenInput').value = '';
-                        document.getElementById('customerFoundPill').classList.add('d-none');
-                        document.getElementById('newCustomerAlert').classList.add('d-none');
+                        var phoneInput = document.getElementById('txtPhoneInput');
+                        if (phoneInput) phoneInput.value = '';
+                        var cashInput = document.getElementById('cashGivenInput');
+                        if (cashInput) cashInput.value = '';
+                        var foundPill = document.getElementById('customerFoundPill');
+                        if (foundPill) foundPill.classList.add('d-none');
+                        var alertPill = document.getElementById('newCustomerAlert');
+                        if (alertPill) alertPill.classList.add('d-none');
+                        var chkPoints = document.getElementById('chkUseLoyaltyPoints');
+                        if (chkPoints) chkPoints.checked = false;
+
+                        // Xóa sạch tất cả các thông báo cũ còn tồn đọng trước khi báo thành công
+                        var wrapToast = document.getElementById('posToastWrap');
+                        if (wrapToast) wrapToast.innerHTML = '';
+
                         renderCartUI();
+
+                        // Hiển thị thông báo thành công rõ ràng
+                        showPosToast('Thanh toán thành công đơn hàng ' + data.orderCode, 'success');
+                    } catch (errInner) {
+                        console.error('POS UI render error:', errInner);
                     }
                 } else {
                     showPosToast(data.message || 'Thanh toán thất bại!', 'error');
@@ -1285,8 +1358,12 @@
                 showPosToast('Lỗi khi thực hiện giao dịch!', 'error');
             })
             .finally(function() {
-                btn.disabled = false;
-                btn.innerHTML = '<span><i class="fas fa-check-circle me-1"></i> THANH TOÁN</span><span class="tabular-nums" id="btnPayAmount">' + document.getElementById('cartFinalTotalDisplay').textContent + '</span>';
+                setTimeout(function() { isPosSubmitting = false; }, 600);
+                var payBtn = document.getElementById('btnSubmitCheckout');
+                if (payBtn) {
+                    payBtn.disabled = (posCart.length === 0);
+                    payBtn.innerHTML = '<span><i class="fas fa-check-circle me-1"></i> THANH TOÁN</span><span class="tabular-nums" id="btnPayAmount">' + (document.getElementById('cartFinalTotalDisplay')?.textContent || '0 đ') + '</span>';
+                }
             });
         }
 
@@ -1401,9 +1478,66 @@
             }
         }
 
+        // ==================== QUẢN LÝ TIỀN MẶT ĐẦU CA / MỞ KÉT ====================
+        var expectedPreviousCash = <%= Number(typeof expectedPreviousCash !== 'undefined' ? expectedPreviousCash : 625000) %>;
+
+        function validateStartingCashMatch() {
+            var input = document.getElementById('startingCashInput');
+            var alertBox = document.getElementById('startingCashMatchAlert');
+            var btn = document.getElementById('btnConfirmStartCash');
+            if (!input || !alertBox || !btn) return;
+
+            var val = parseFloat(input.value) || 0;
+            var diff = val - expectedPreviousCash;
+
+            if (Math.abs(diff) < 0.01) {
+                alertBox.innerHTML = '<div class="alert alert-success py-2 px-3 mb-0 rounded-2 fw-semibold d-flex align-items-center gap-2" style="font-size: 0.8rem; background: #ECFDF5; border: 1px solid #A7F3D0; color: #065F46;">' +
+                    '<i class="fas fa-check-circle text-success fs-5"></i>' +
+                    '<div>Số tiền hoàn toàn <strong>TRÙNG KHỚP</strong> với ca trước (' + formatVND(expectedPreviousCash) + '). Đạt chuẩn yêu cầu của giáo viên!</div>' +
+                    '</div>';
+                btn.disabled = false;
+                btn.className = 'btn-brand-primary w-100 justify-content-center py-2 fs-6 shadow-sm';
+            } else {
+                var diffStr = diff > 0 ? ('THỪA +' + formatVND(diff)) : ('THIẾU -' + formatVND(Math.abs(diff)));
+                alertBox.innerHTML = '<div class="alert alert-danger py-2 px-3 mb-0 rounded-2 fw-semibold d-flex align-items-center gap-2" style="font-size: 0.8rem; background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B;">' +
+                    '<i class="fas fa-times-circle text-danger fs-5"></i>' +
+                    '<div><strong>KHÔNG TRÙNG KHỚP (' + diffStr + ')</strong>! Yêu cầu giáo viên: Số tiền mở két bắt buộc phải khớp đúng ' + formatVND(expectedPreviousCash) + '.</div>' +
+                    '</div>';
+                btn.disabled = true;
+                btn.className = 'btn btn-secondary w-100 justify-content-center py-2 fs-6 shadow-sm opacity-50';
+            }
+        }
+
+        function autoFillExpectedCash() {
+            var input = document.getElementById('startingCashInput');
+            if (input) {
+                input.value = expectedPreviousCash;
+                validateStartingCashMatch();
+            }
+        }
+
+        // Tự động kiểm tra trạng thái khớp tiền ngay khi tải trang
+        if (document.getElementById('startCashModal')) {
+            setTimeout(validateStartingCashMatch, 150);
+        }
+
         // Starting Cash Modal Save
         function saveStartingCash() {
-            var val = parseFloat(document.getElementById('startingCashInput').value) || 0;
+            var input = document.getElementById('startingCashInput');
+            var val = parseFloat(input ? input.value : 0) || 0;
+
+            if (Math.abs(val - expectedPreviousCash) >= 0.01) {
+                showPosToast('❌ Số tiền mở két (' + formatVND(val) + ') không trùng khớp với ca trước (' + formatVND(expectedPreviousCash) + ')!', 'error');
+                validateStartingCashMatch();
+                return;
+            }
+
+            var btn = document.getElementById('btnConfirmStartCash');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang mở két...';
+            }
+
             fetch('/Pos/SaveStartingCash', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1414,9 +1548,20 @@
                 if (data.success) {
                     var el = document.getElementById('startCashModal');
                     if (el) el.remove();
-                    showPosToast('Đã lưu tiền đầu ca thành công!', 'success');
+                    showPosToast('✅ Đã mở két thành công! Số tiền ' + formatVND(val) + ' khớp đúng ca trước.', 'success');
                 } else {
-                    showPosToast(data.message, 'error');
+                    showPosToast(data.message || 'Không thể lưu tiền mở két!', 'error');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-key me-1"></i> Xác Nhận Mở Két Bắt Đầu Ca';
+                    }
+                }
+            })
+            .catch(function() {
+                showPosToast('Lỗi kết nối máy chủ!', 'error');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-key me-1"></i> Xác Nhận Mở Két Bắt Đầu Ca';
                 }
             });
         }

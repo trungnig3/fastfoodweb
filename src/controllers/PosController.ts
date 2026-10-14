@@ -13,6 +13,15 @@ export class PosController {
       activeShift = db.createShift(user.UserId, 0);
     }
 
+    const expectedPreviousCash = db.getExpectedPreviousCash();
+    const previousShift = db.getPreviousClosedShift();
+    let previousCashierName = 'Ca trước (Thu ngân tiền nhiệm)';
+    if (previousShift) {
+      const cashierUser = db.getUserById(previousShift.UserId);
+      if (cashierUser) {
+        previousCashierName = cashierUser.FullName;
+      }
+    }
     const showStartCashModal = activeShift.StartingCash === 0;
     const products = db.products.filter(p => p.IsActive);
     const categories = db.categories;
@@ -20,22 +29,39 @@ export class PosController {
     res.render('pos/index', {
       cashierName: user.FullName || 'Thu Ngân',
       showStartCashModal,
+      expectedPreviousCash,
+      previousShift,
+      previousCashierName,
       products,
       categories
     });
   }
 
-  // Khai báo số tiền mặt đầu ca
+  // Khai báo số tiền mặt đầu ca (Bắt buộc trùng khớp với số tiền ca trước bàn giao)
   static saveStartingCash(req: Request, res: Response) {
     const user = req.session.user!;
     const activeShift = db.getActiveShift(user.UserId);
     const startingCash = parseFloat(req.body.startingCash) || 0;
+    const expectedCash = db.getExpectedPreviousCash();
 
-    if (activeShift) {
-      activeShift.StartingCash = startingCash;
-      return res.json({ success: true });
+    if (!activeShift) {
+      return res.json({ success: false, message: 'Không tìm thấy ca làm việc hợp lệ!' });
     }
-    return res.json({ success: false, message: 'Không tìm thấy ca làm việc hợp lệ!' });
+
+    // Yêu cầu của giáo viên: Khi mở két thì số tiền phải trùng khớp với số tiền của ca trước
+    if (Math.abs(startingCash - expectedCash) > 0.01) {
+      return res.json({
+        success: false,
+        message: `❌ LỖI MỞ KÉT: Số tiền bạn nhập (${startingCash.toLocaleString('vi-VN')} đ) KHÔNG TRÙNG KHỚP với số tiền kết ca trước bàn giao (${expectedCash.toLocaleString('vi-VN')} đ)! Theo yêu cầu của giáo viên và quy định quản lý két, số tiền mở két ca này bắt buộc phải trùng khớp 100% với số tiền ca trước.`
+      });
+    }
+
+    activeShift.StartingCash = startingCash;
+    return res.json({
+      success: true,
+      startingCash,
+      message: `Mở két thành công! Số tiền ${startingCash.toLocaleString('vi-VN')} đ hoàn toàn trùng khớp với số tiền ca trước bàn giao.`
+    });
   }
 
   // Đóng ca làm việc và đối soát tiền mặt
